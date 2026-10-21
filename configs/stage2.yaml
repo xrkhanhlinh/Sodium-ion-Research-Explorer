@@ -1,0 +1,36 @@
+stage: 2
+expected_main_records: 13702
+input_main: data/processed/main_corpus.parquet
+input_tokens: data/processed/lda_tokens.parquet
+input_clean_master: data/processed/combined_clean.parquet
+dictionary:
+  policy: all_stage1_tokens_no_filtering
+lda:
+  topics: [10, 15, 20, 25, 30]
+  base_seed: 42
+  additional_seeds: [123, 2026]
+  passes: 10
+  iterations: 100
+  chunksize: 1024
+  update_every: 1
+  alpha: asymmetric
+  eta: symmetric
+  eval_every: 1
+  gamma_threshold: 0.001
+evaluation:
+  topn: 10
+  cv_window_size: 110
+  coherence_processes: 1
+  promising_count: 2
+  stability: hungarian_maximum_top10_jaccard_mean_over_all_seed_pairs
+selection:
+  policy: top2_base_seed_cv_then_weighted_score
+  cv_minmax_weight: 0.50
+  umass_minmax_weight: 0.15
+  diversity_weight: 0.15
+  stability_weight: 0.20
+  normalization_population: five_base_seed_configurations
+  tie_break: smaller_K
+  selected_model_seed: 42
+visualization:
+  dpi: 300

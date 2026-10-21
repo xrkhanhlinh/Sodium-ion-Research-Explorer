@@ -1,0 +1,36 @@
+stage: 1
+seed: 42
+inputs:
+  patent: patent.xlsx
+  publication: publication.xlsx
+policy:
+  main_relevance: [CORE, RELATED]
+  exclude_retracted: true
+  minimum_language_confidence: 0.90
+  language_sample_chars: 1400
+  minimum_lda_tokens: 5
+  near_duplicate_title_similarity: 0.88
+  near_duplicate_abstract_jaccard: 0.80
+  near_duplicate_batch_size: 256
+  patent_year: earliest_valid_publication_date_in_PD
+  repair_tab_collapsed_rows: true
+  retain_distinct_patent_ids: true
+  language_workers: 1
+preprocessing:
+  lemmatizer: nltk_wordnet_noun_then_verb
+  preserve_formula_case: true
+  domain_phrases:
+    - hard carbon
+    - soft carbon
+    - sodium ion
+    - lithium ion
+    - potassium ion
+    - solid electrolyte
+    - prussian blue
+    - energy storage
+    - layered oxide
+    - solid state
+  technical_stopwords: [novelty, advantage, claimed, preferably, invention, comprises, comprising, drawing, drawings, fig, figs, embodiment, embodiments]
+visualization:
+  dpi: 300
+  format: png
