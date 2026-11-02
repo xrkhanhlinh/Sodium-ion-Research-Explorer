@@ -1,0 +1,180 @@
+\chapter{Cơ sở lý thuyết và phương pháp}\label{ch:methods}
+\section{Biểu diễn và tiền xử lý văn bản}
+Một tài liệu được biểu diễn theo nhiều góc nhìn phù hợp với mô hình, thay vì ép mọi phương pháp dùng cùng một chuỗi đã loại bỏ cấu trúc. Văn bản chuẩn hóa giữ Title/Abstract để truy vết; token chủ đề được lemmatize, xử lý stopwords và ghép các cụm miền như \artifact{hard_carbon}. Search v2 xây dựng lexical view riêng và có kênh giữ case cho chuỗi giống công thức. Các phép này đều có giới hạn heuristic; không có bộ suy luận tương đương công thức hóa học.
+
+Bag-of-Words mã hóa tài liệu $d$ thành vector đếm:
+\begin{equation}\label{eq:bow}
+x_{dt}=\sum_{n=1}^{L_d}\ind[w_{dn}=t],\qquad x_d\in\mathbb N^V.
+\end{equation}
+Ở đây $L_d$ là số token, $t$ là một mục từ vựng và $V$ là kích thước từ vựng. Biểu diễn này bảo toàn tần suất nhưng bỏ thứ tự. Cụm từ ghép giảm một phần mất mát quan hệ cục bộ, không khôi phục được cấu trúc câu.
+
+WordPiece chia văn bản thành các đơn vị con từ theo từ vựng checkpoint BERT. Một công thức hoặc từ kỹ thuật có thể thành nhiều WordPiece, nên số từ không đồng nhất với số token. Chuẩn hóa Unicode và tokenizer có thể làm hai cách viết khác nhau nhận cùng ID; thí nghiệm case trong artifacts chỉ minh họa giới hạn đầu vào, chưa chứng minh mọi trường hợp gây lỗi retrieval. Giới hạn 128 và 256 trong dự án là giới hạn cấu hình thực nghiệm, không phải khẳng định kiến trúc BGE chỉ hỗ trợ từng đó token.
+
+\section{Latent Dirichlet Allocation}
+LDA giả định mỗi tài liệu là hỗn hợp chủ đề và mỗi chủ đề là một phân bố trên từ vựng \cite{lda}. Với $K$ chủ đề, đặt $\theta_d\in\Delta^{K-1}$ và $\phi_k\in\Delta^{V-1}$, trong đó $\Delta$ là simplex xác suất. Dạng Bayesian thông dụng viết:
+\begin{align}
+\theta_d&\sim\operatorname{Dirichlet}(\alpha), &
+\phi_k&\sim\operatorname{Dirichlet}(\eta),\label{eq:lda-prior}\\
+z_{dn}&\sim\operatorname{Categorical}(\theta_d), &
+w_{dn}&\sim\operatorname{Categorical}(\phi_{z_{dn}}).\label{eq:lda-gen}
+\end{align}
+$z_{dn}$ là chủ đề ẩn của token thứ $n$; $\alpha,\eta$ là tham số prior, không phải relevance labels. Trong code Gensim, $\alpha$ được đặt asymmetric và $\eta$ symmetric. Xác suất một từ trong tài liệu là:
+\begin{equation}\label{eq:lda-mixture}
+P(w=t\mid d)=\sum_{k=1}^{K}\theta_{dk}\phi_{kt}.
+\end{equation}
+Do đó một bài về điện giải và giao diện có thể có khối lượng ở nhiều chủ đề thay vì chỉ một nhãn. Gán topic trội bằng $\arg\max_k\theta_{dk}$ phục vụ thống kê, nhưng làm mất thông tin hỗn hợp.
+
+Hậu nghiệm chính xác khó tính. Suy luận biến phân dùng một họ phân bố $q$ để tối ưu cận dưới:
+\begin{equation}\label{eq:elbo}
+\mathcal L(q)=\mathbb E_q[\log p(w,z,\theta,\phi)]-
+\mathbb E_q[\log q(z,\theta,\phi)].
+\end{equation}
+Các biến ẩn được xấp xỉ qua cập nhật lặp; implementation dùng \artifact{gensim.models.LdaModel}, không triển khai Gibbs sampling riêng. Cấu hình $K$ được khảo sát trước, rồi lựa chọn bằng coherence và các tiêu chí bổ sung. Trong SE1 lịch sử, vector $\theta_q$ của query được so với $\theta_d$ bằng cosine; app Search v2 không dùng phép này. LDA dễ diễn giải theo từ nhưng yếu ở phủ định, trật tự và công thức hiếm.
+
+\section{BERT, BGE và BERTopic}
+\subsection{Biểu diễn ngữ cảnh và fine-tuning đối chứng}
+BERT dùng các lớp Transformer để tạo biểu diễn ngữ cảnh hai chiều \cite{bert}. Với ma trận đầu vào $X$, một attention head sử dụng $Q=XW_Q$, $K=XW_K$, $V=XW_V$:
+\begin{equation}\label{eq:attention}
+\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V.
+\end{equation}
+$d_k$ là kích thước key; softmax theo các vị trí cho phép mỗi token tổng hợp thông tin từ các token khác. Công thức mô tả một head, không phải toàn bộ mô hình; encoder còn multi-head, residual, normalization và feed-forward.
+
+BGE-base-en-v1.5 là checkpoint embedding được dự án tải và pin provenance, không phải BERT huấn luyện từ đầu \cite{bge}. Với $h_{\mathrm{CLS}}(x)\in\R^{768}$:
+\begin{equation}\label{eq:embedding}
+e(x)=\frac{h_{\mathrm{CLS}}(x)}{\|h_{\mathrm{CLS}}(x)\|_2},\qquad
+s(q,d)=e(q)^\top e(d).
+\end{equation}
+Do hai vector có norm bằng 1, dot product bằng cosine và nằm trong $[-1,1]$, sai số số học ngoại trừ. Điểm không phải xác suất relevance. Query được thêm instruction của BGE; document không thêm instruction query.
+
+Fine-tuning sử dụng cặp $(q_i,d_i)=(Title_i,Abstract_i)$. Trong batch $B=8$, đặt $S_{ij}=e(q_i)^\top e(d_j)/\tau$, với $\tau=0,05$. Loss đối xứng thực tế là:
+\begin{align}
+L_{q\to d}&=-\frac1B\sum_i\log\frac{\exp S_{ii}}{\sum_{j\in A_i}\exp S_{ij}},\label{eq:contrastive}\\
+L&=\tfrac12\left(L_{q\to d}+L_{d\to q}\right).\label{eq:sym-loss}
+\end{align}
+$A_i$ giữ positive và các negative không bị mask; chiều ngược dùng ma trận chuyển vị. Các cặp cùng nhóm hoặc Jaccard Title từ 0,8 được mask để giảm false negatives. Code thay score của chúng bằng $-10^4$, xấp xỉ loại khỏi softmax. Positive nằm trên đường chéo, không bị mask. Đây là in-batch contrastive learning, không phải học trực tiếp từ nhãn relevance của người dùng.
+
+Chỉ block encoder cuối được cập nhật bằng AdamW, một epoch; các block còn lại đóng băng. Checkpoint được chọn theo validation group MRR@10, không dùng test. Giới hạn đầu vào khi train vẫn là 128 tokens: việc tạo chunk 256 ở inference sau này không biến thí nghiệm train thành huấn luyện full-Abstract.
+
+\subsection{Sliding windows và tổng hợp cấp tài liệu}
+Gọi $S$ là special tokens, $T_d$ là Title tokens được giữ. Một cặp Title--Abstract chunk có ngân sách Abstract $C_d=256-S-T_d$. Title được giới hạn để chừa ít nhất 65 tokens, lớn hơn overlap 64. Với khoảng nửa mở $[a_j,b_j)$:
+\begin{equation}\label{eq:windows}
+b_j\le\min(a_j+C_d,L_d),\qquad a_{j+1}=b_j-64.
+\end{equation}
+$L_d$ là số Abstract WordPiece tokens. Code ưu tiên ranh giới câu khi có thể, nên bước tiến không phải lúc nào cũng bằng $256-64$. Đầu vào được tạo trực tiếp từ token IDs, tránh decode rồi tokenize lại. Điều kiện bao phủ là $\bigcup_j[a_j,b_j)=[0,L_d)$, được kiểm tra bằng offsets.
+
+Với $m_d$ chunk và các vector đã chuẩn hóa $e_{dj}$, pooling đúng code là:
+\begin{equation}\label{eq:pool}
+u_d=\frac1{m_d}\sum_{j=1}^{m_d}e_{dj},\qquad
+e_d=\frac{u_d}{\|u_d\|_2}.
+\end{equation}
+Mỗi chunk có trọng số bằng nhau; không có attention pooling hoặc trọng số theo độ dài. Overlap và Title lặp làm tăng ảnh hưởng nội dung chung. Mean pooling dễ triển khai và giữ một vector 768 chiều mỗi tài liệu nhưng có thể hòa loãng thông tin hiếm. Tài liệu không có Abstract sử dụng Title thật, không sinh nội dung bù.
+
+\subsection{Giảm chiều, phân cụm và từ khóa}
+BERTopic dùng embeddings để tìm cụm, rồi c-TF-IDF để mô tả cụm \cite{bertopic}. UMAP tạo đồ thị lân cận và tìm biểu diễn chiều thấp giữ quan hệ kết nối \cite{umap}. Dạng cross-entropy giữa fuzzy memberships $p_{ij}$ ở không gian gốc và $q_{ij}$ ở chiều thấp có phần phụ thuộc nghiệm:
+\begin{equation}\label{eq:umap}
+L_{\mathrm{UMAP}}=-\sum_{i<j}\left[p_{ij}\log q_{ij}+(1-p_{ij})\log(1-q_{ij})\right].
+\end{equation}
+Công thức bỏ các hạng chỉ phụ thuộc $p$; implementation tối ưu bằng lấy mẫu và không tính tổng đầy đủ một cách ngây thơ. Trong dự án, cosine dùng xây lân cận từ embeddings; output 5 chiều dùng clustering. UMAP 2D minh họa được tính riêng, không dùng làm bằng chứng chất lượng cụm.
+
+HDBSCAN khảo sát cấu trúc mật độ theo nhiều mức \cite{hdbscan}. Mutual-reachability distance có dạng:
+\begin{equation}\label{eq:hdbscan}
+d_{\mathrm{mr}}(a,b)=\max\{core_k(a),core_k(b),d(a,b)\}.
+\end{equation}
+$core_k(a)$ phản ánh khoảng cách lân cận để đạt mật độ tại $a$; $d$ là Euclidean ở không gian UMAP. Cây phân cấp mật độ được cô đọng, rồi EOM chọn các cụm bền vững. Tham số 30 là kích thước cụm tối thiểu, không phải số chủ đề; \artifact{min_samples=10} điều chỉnh tính bảo thủ mật độ. Nhãn $-1$ là noise. Membership strength không phải phân bố xác suất chủ đề như $\theta_d$ của LDA.
+
+Gộp các tài liệu mỗi cụm thành một class document; đặt $n_{ct}$ là tần suất từ $t$ trong cụm $c$, $L_c=\sum_tn_{ct}$, $f_t=\sum_cn_{ct}$ và $A$ là độ dài class trung bình (implementation chuyển sang số nguyên). Với \artifact{reduce_frequent_words=True}, trọng số là:
+\begin{equation}\label{eq:ctfidf}
+w_{ct}=\sqrt{\frac{n_{ct}}{L_c}}\log\left(1+\frac{A}{f_t}\right).
+\end{equation}
+Đây là biến thể căn bậc hai của TF sau L1 normalization theo implementation c-TF-IDF \cite{ctfidf}. Nó giảm ưu thế tương đối của từ rất thường gặp. Từ khóa giải thích cụm đã hình thành, không quyết định lại embeddings; từ khóa có thể phản ánh lỗi kế thừa từ token Stage 1.
+
+\section{Phương pháp truy xuất thông tin}
+\subsection{SE1, SE2, SE3 và Qdrant lịch sử}
+SE1 biểu diễn query và tài liệu bằng phân bố LDA 20 chiều, rồi xếp hạng theo:
+\begin{equation}\label{eq:se1}
+s_1(q,d)=\frac{\theta_q^\top\theta_d}{\|\theta_q\|_2\|\theta_d\|_2}.
+\end{equation}
+Hai vector xác suất không âm nên điểm nằm trong $[0,1]$ khi khác zero. Query không có token từ vựng được trả trạng thái không khớp thay vì suy diễn một topic chắc chắn. Điểm cao chỉ nói phân bố topic gần nhau, có thể bỏ qua công thức hoặc điều kiện cụ thể.
+
+SE2 lịch sử lấy Top100 dense fine-tuned rồi cộng affinity với centroid của topic được gán:
+\begin{align}
+c_t&=\operatorname{L2Norm}\left(\frac1{|D_t|}\sum_{d\in D_t}e_d\right),\label{eq:centroid}\\
+s_2(q,d)&=e_q^\top e_d+0,1\ind[t(d)\ne-1]e_q^\top c_{t(d)}.\label{eq:se2}
+\end{align}
+$D_t$ là tập tài liệu topic $t$; outlier không nhận bonus. Hệ số 0,1 là cấu hình thiết kế, không phải kết quả tuning relevance độc lập. Score có thể âm và không phải xác suất. Chỉ Top100 dense được xét lại; topic bonus không bổ sung tài liệu ngoài tập này. SE2 không tìm trực tiếp trên c-TF-IDF keywords.
+
+SE3 hợp nhất thứ hạng SE1 và SE2 bằng RRF \cite{rrf}:
+\begin{equation}\label{eq:rrf}
+RRF(d)=\sum_{m:d\in R_m}\frac1{k+rank_m(d)},\qquad k=60.
+\end{equation}
+$rank_m$ bắt đầu từ 1; tài liệu vắng trong một list không nhận điểm từ list đó. Các nhánh có trọng số bằng nhau. RRF dùng thứ hạng để tránh cộng trực tiếp điểm LDA và dense có thang khác nhau, đổi lại mất thông tin độ lớn chênh lệch score.
+
+Qdrant lịch sử lưu named vectors \artifact{lda_topic} 20 chiều và \artifact{bert_dense} 768 chiều cùng payload \artifact{doc_id}. Nó đảm nhiệm lưu trữ/truy vấn vector, không học embedding hoặc relevance \cite{qdrant}. Contract ghi local embedded persistent SQLite, exact cosine và một owner process; không có căn cứ gọi lần chạy đó là benchmark ANN phân tán. App mới không mở Qdrant. Baseline offline được đọc từ rankings hoặc replay NumPy có kiểm tra parity.
+
+\subsection{BM25, dense, hybrid và reranker hiện tại}
+BM25 mô hình hóa tần suất có bão hòa và hiệu chỉnh độ dài \cite{bm25}:
+\begin{equation}\label{eq:bm25}
+B(q,d)=\sum_{t\in q}IDF(t)\frac{f(t,d)(k_1+1)}{f(t,d)+k_1(1-b+b|d|/avgdl)}.
+\end{equation}
+$f(t,d)$ là term frequency; $avgdl$ là độ dài trung bình field; $k_1=1,5$, $b=0,75$. Thư viện \artifact{rank_bm25.BM25Okapi} dùng $\log((N-df+0,5)/(df+0,5))$ và đặt các IDF âm về $0,25$ lần average IDF. V2 tính riêng Title/Abstract rồi dùng $2\max(B_T,0)+\max(B_A,0)$. BM25 lịch sử dùng token Stage 1, không đồng nhất với \artifact{BM25_CHEMICAL} mới.
+
+Dense retrieval dùng ma trận embeddings ở công thức~\eqref{eq:embedding} để xếp hạng toàn bộ corpus hợp lệ. Hybrid v2 dùng RRF trên Top100 lexical và Top100 dense. Nếu không có lexical support, hybrid/reranker trả rỗng; đây là support gate, không phải OOD detector đã hiệu chỉnh. Nó có thể loại cả paraphrase hợp lệ không trùng token.
+
+Cross-encoder MiniLM đọc query và passage chung \cite{reranker}, khác bi-encoder mã hóa riêng:
+\begin{equation}\label{eq:rerank}
+s_{CE}(q,d)=\max_{p\in P_d}g_\psi([q;p]).
+\end{equation}
+$P_d$ gồm tối đa hai passage được chọn theo overlap lexical; $g_\psi$ là score mô hình, không phải xác suất chất lượng đã hiệu chỉnh. V2 rerank Top50 hybrid với cửa sổ tối đa 320 tokens, overlap 64, Title tối đa 80 và tổng pair tối đa 512. Chọn max để một đoạn đáp ứng mạnh có thể đưa tài liệu lên cao, nhưng không bảo đảm đọc mọi bằng chứng phủ định. Reranker không thể cứu tài liệu chưa vào candidate set.
+
+\section{Phương pháp đánh giá}\label{sec:metrics}
+\subsection{Topic coherence, diversity, outliers và stability}
+U\_Mass đo đồng xuất hiện của các từ Top-$n$ trên văn bản tham chiếu:
+\begin{equation}\label{eq:umass}
+C_{UMass}=\frac1{|\mathcal P|}\sum_{(i,j)\in\mathcal P}
+\log\frac{D(w_i,w_j)+\epsilon}{D(w_j)}.
+\end{equation}
+$D(w)$ là số tài liệu chứa từ, $\mathcal P$ gồm các cặp theo thứ tự keywords. Gensim có quy ước smoothing và aggregation cụ thể; báo cáo lấy số xuất từ thư viện thay vì tái gán thang điểm. Điểm thường âm, lớn hơn là tốt hơn theo tiêu chí này, không phải phần trăm và không có ngưỡng đạt phổ quát.
+
+$C_v$ kết hợp sliding-window co-occurrence, NPMI và indirect cosine confirmation \cite{coherence}. Hạt nhân NPMI là:
+\begin{equation}\label{eq:npmi}
+NPMI(w_i,w_j)=\frac{\log\frac{P(w_i,w_j)}{P(w_i)P(w_j)}}{-\log P(w_i,w_j)}.
+\end{equation}
+$P$ được ước lượng trên cửa sổ Boolean; NPMI lý tưởng thuộc $[-1,1]$, với smoothing xử lý zero. Để làm rõ $C_v$ không phải trung bình NPMI đơn thuần, đặt vector ngữ cảnh $v(S)_j=\sum_{w_i\in S}NPMI(w_i,w_j)$ với exponent $\gamma=1$ của cấu hình chuẩn. Confirmation giữa singleton $\{w_i\}$ và tập keywords $W$ là:
+\begin{equation}\label{eq:cv}
+\widetilde m(\{w_i\},W)=\frac{v(\{w_i\})^\top v(W)}{\|v(\{w_i\})\|_2\|v(W)\|_2};\quad C_v=\operatorname{mean}\widetilde m.
+\end{equation}
+Phép lấy trung bình qua segmentation và topics do Gensim thực hiện, với window 110 và Top10. Theo biểu diễn cosine ở công thức~\eqref{eq:cv}, điểm thuộc $[-1,1]$ khi các vector khác zero; các kết quả thực nghiệm ở đây dương. Điểm không phải xác suất. Trường hợp denominator zero/không đủ thống kê cần xử lý, không tự thay bằng một relevance grade.
+
+Topic diversity và outlier rate được định nghĩa:
+\begin{equation}\label{eq:diversity}
+D=\frac{|\bigcup_{k=1}^{K}Top_n(k)|}{Kn},\qquad
+O=\frac{\sum_d\ind[t(d)=-1]}{N}.
+\end{equation}
+Cả hai thuộc $[0,1]$. Diversity cao biểu thị ít trùng keywords, chưa chứng minh topic đúng; outlier rate không phải tỷ lệ tài liệu không liên quan. LDA không có cơ chế reject nên outlier 0 là tính chất mô hình, không phải ưu thế tự động.
+
+Stability LDA ghép Top10 sets giữa hai seed bằng Hungarian:
+\begin{equation}\label{eq:stability}
+S(a,b)=\max_{\pi}\frac1K\sum_{k=1}^{K}
+\frac{|T_k^{(a)}\cap T_{\pi(k)}^{(b)}|}{|T_k^{(a)}\cup T_{\pi(k)}^{(b)}|}.
+\end{equation}
+$\pi$ là phép hoán vị; điểm thuộc $[0,1]$ và được trung bình qua các cặp seed. BERTopic baseline dùng matching chữ nhật với topic không ghép nhận 0, trên hai UMAP seeds và embeddings cố định. Hai stability có protocol khác nhau. ARI/NMI giữa baseline và chunked là đồng thuận giữa phiên bản biểu diễn, không phải stability nhiều seed.
+
+\subsection{Relevance Top5, agreement và uncertainty}
+Với grade $g_i\in\{0,1,2,3\}$, định nghĩa $r_i=\ind[g_i\ge2]$. Các metric theo từng query là:
+\begin{align}
+P@5(q)&=\frac15\sum_{i=1}^{5}r_i,\label{eq:p5}\\
+RR@5(q)&=\begin{cases}1/j,&j=\min\{i\le5:r_i=1\},\\0,&\text{không có tài liệu relevant,}\end{cases}\label{eq:rr}\\
+DCG@5(q)&=\sum_{i=1}^{5}\frac{2^{g_i}-1}{\log_2(i+1)},\qquad
+nDCG@5(q)=\frac{DCG@5(q)}{IDCG@5(q)}.\label{eq:ndcg}
+\end{align}
+$IDCG$ là DCG của thứ tự grades giảm dần từ toàn pool chung của query. Nếu $IDCG=0$, policy giữ query với nDCG bằng 0. Empty run đã khai báo có điểm 0 khi query đủ nhãn; run thiếu không được giả định empty. P@5 giữ mẫu số 5 khi trả ít hơn năm kết quả. MRR là mean của RR; các mean khác cũng macro-average qua cùng tập query đủ điều kiện. Các điểm thuộc $[0,1]$ khi input và ideal pool hợp lệ \cite{irbook}.
+
+Không thể tính Recall toàn corpus chỉ từ pool Top5 chưa đầy đủ. Chưa chấm không có nghĩa không relevant. Evaluator loại cả query có pool chưa đủ cho mọi phương pháp để giữ mẫu query chung, đồng thời công bố coverage và selection bias.
+
+Exact agreement là tỷ lệ A/B cùng grade số trước phân xử. Với $O_{ij}$ là tỷ lệ rating quan sát, $E_{ij}$ là tỷ lệ kỳ vọng từ marginal và $w_{ij}=(i-j)^2/9$, quadratic weighted kappa là:
+\begin{equation}\label{eq:kappa}
+\kappa_w=1-\frac{\sum_{ij}w_{ij}O_{ij}}{\sum_{ij}w_{ij}E_{ij}}.
+\end{equation}
+Kappa không xác định khi denominator bằng 0; code giữ null. Giá trị 1 biểu thị đồng thuận hoàn toàn, âm có thể xảy ra khi kém hơn kỳ vọng. Đây là agreement, không phải độ đúng. LLM judges có bias và sai lệch tương quan \cite{llmjudge}; hai lần gọi cùng model không được gọi là hai chuyên gia độc lập.
+
+Bootstrap lấy mẫu lại query (hoặc \artifact{split_group_id} cho proxy/source recovery), giữ paired methods và tính $\widehat\Delta^{(b)}=M_A^{(b)}-M_B^{(b)}$. CI 95\% dùng các phân vị 2,5\% và 97,5\% của 2.000 lần lấy mẫu, seed 42. CI có điều kiện trên nhãn/checkpoints hiện tại; không chứa bất định do training seed, judge hoặc domain shift. So sánh 91 cặp trong 14 methods mang tính exploratory, chưa chỉnh multiple comparisons.

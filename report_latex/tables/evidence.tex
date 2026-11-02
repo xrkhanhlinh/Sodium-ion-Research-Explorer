@@ -1,0 +1,29 @@
+\begingroup\setstretch{1.0}\footnotesize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.10}
+\begin{longtable}{p{.29\linewidth}p{.62\linewidth}}
+\caption{Bản đồ bằng chứng dùng để kiểm tra nội dung.}\label{tab:evidence}\\
+\toprule Nội dung & Artifact \\
+\midrule\endfirsthead
+\multicolumn{2}{l}{\textit{Bảng tiếp theo}}\\
+\toprule Nội dung & Artifact \\
+\midrule\endhead
+\bottomrule\endfoot
+Corpus và disposition & \artifact{data/processed/main_corpus.parquet} \\
+Số liệu xử lý & \artifact{outputs/reports/cleaning_summary.csv} \\
+LDA grid / lựa chọn & \artifact{outputs/tables/stage2/lda_comparison.csv} \\
+Proxy trước/sau và CI & \artifact{outputs/research_validation/proxy_test_metrics_ci.csv} \\
+Coverage chunking & \artifact{outputs/bertopic_chunked/chunking_success.json} \\
+Topic metrics & \artifact{outputs/bertopic_chunked/metrics.json} \\
+Chuyển topic/noise và ARI & \artifact{outputs/research_validation/between_versions_agreement.json} \\
+Rankings 14 methods & \artifact{outputs/search_upgrade_20261018/evaluation_14_methods/top5_fourteen_methods.csv} \\
+Qrels AI và provenance & \artifact{outputs/retrieval_ai_evaluation_v1/ai_consensus_qrels.csv} \\
+Agreement và coverage & \artifact{outputs/retrieval_ai_evaluation_v1/agreement.json} \\
+Relevance AI một phần & \artifact{outputs/retrieval_ai_evaluation_v1/summary.csv} \\
+Synthetic summary & \artifact{outputs/retrieval_ai_evaluation_v1/synthetic/summary.csv} \\
+Tái tính 2.758 runs & \artifact{outputs/retrieval_ai_evaluation_v1/completion_validation.json} \\
+Latency warm uncached & \artifact{outputs/search_upgrade_20261018/live_latency_scope.json} \\
+237 tests đã thực hiện & \artifact{outputs/retrieval_ai_evaluation_v1/tests.xml} \\
+Hash inputs AI task & \artifact{outputs/retrieval_ai_evaluation_v1/input_verification.json} \\
+Parity baseline lịch sử & \artifact{outputs/retrieval_ai_evaluation_v1/legacy_parity.json} \\
+Implementation lịch sử & \artifact{archive/cleanup_20261018/historical_files.zip} \\
+\end{longtable}\endgroup
+\source{Các đường dẫn tương đối từ workspace root}

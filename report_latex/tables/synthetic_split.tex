@@ -1,0 +1,53 @@
+\begingroup\setstretch{1.0}\footnotesize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.10}
+\begin{longtable}{p{.34\linewidth}lrrr}
+\caption{Source recovery theo split của source document; không phải relevance.}\label{tab:synthetic-split}\\
+\toprule Method & Nhóm & $n$ & Hit@10 & MRR@10 \\
+\midrule\endfirsthead
+\multicolumn{5}{l}{\textit{Bảng tiếp theo}}\\
+\toprule Method & Nhóm & $n$ & Hit@10 & MRR@10 \\
+\midrule\endhead
+\bottomrule\endfoot
+{\footnotesize\texttt{BM25}} & test & 18 & 0,8889 & 0,7625 \\
+{\footnotesize\texttt{BM25}} & train & 163 & 0,9018 & 0,8175 \\
+{\footnotesize\texttt{BM25}} & validation & 16 & 0,8750 & 0,6547 \\
+{\footnotesize\texttt{BM25\_CHEMICAL}} & test & 18 & 0,8333 & 0,7346 \\
+{\footnotesize\texttt{BM25\_CHEMICAL}} & train & 163 & 0,8405 & 0,7171 \\
+{\footnotesize\texttt{BM25\_CHEMICAL}} & validation & 16 & 0,8125 & 0,5854 \\
+{\footnotesize\texttt{DENSE\_CHUNKED}} & test & 18 & 0,9444 & 0,8750 \\
+{\footnotesize\texttt{DENSE\_CHUNKED}} & train & 163 & 0,9202 & 0,8385 \\
+{\footnotesize\texttt{DENSE\_CHUNKED}} & validation & 16 & 0,9375 & 0,8594 \\
+{\footnotesize\texttt{DENSE\_FINETUNED}} & test & 18 & 0,8889 & 0,8611 \\
+{\footnotesize\texttt{DENSE\_FINETUNED}} & train & 163 & 0,8896 & 0,8040 \\
+{\footnotesize\texttt{DENSE\_FINETUNED}} & validation & 16 & 0,9375 & 0,7714 \\
+{\footnotesize\texttt{DENSE\_PRETRAINED}} & test & 18 & 0,8889 & 0,8009 \\
+{\footnotesize\texttt{DENSE\_PRETRAINED}} & train & 163 & 0,8712 & 0,7503 \\
+{\footnotesize\texttt{DENSE\_PRETRAINED}} & validation & 16 & 0,8750 & 0,8125 \\
+{\footnotesize\texttt{HYBRID\_CHUNKED}} & test & 18 & 0,8889 & 0,7963 \\
+{\footnotesize\texttt{HYBRID\_CHUNKED}} & train & 163 & 0,9141 & 0,8078 \\
+{\footnotesize\texttt{HYBRID\_CHUNKED}} & validation & 16 & 0,9375 & 0,7937 \\
+{\footnotesize\texttt{HYBRID\_FINETUNED}} & test & 18 & 0,8889 & 0,7824 \\
+{\footnotesize\texttt{HYBRID\_FINETUNED}} & train & 163 & 0,8896 & 0,7995 \\
+{\footnotesize\texttt{HYBRID\_FINETUNED}} & validation & 16 & 0,8750 & 0,7604 \\
+{\footnotesize\texttt{HYBRID\_PRETRAINED}} & test & 18 & 0,8889 & 0,7370 \\
+{\footnotesize\texttt{HYBRID\_PRETRAINED}} & train & 163 & 0,8896 & 0,7816 \\
+{\footnotesize\texttt{HYBRID\_PRETRAINED}} & validation & 16 & 0,8125 & 0,7396 \\
+{\footnotesize\texttt{RERANK\_CHUNKED}} & test & 18 & 0,8889 & 0,7593 \\
+{\footnotesize\texttt{RERANK\_CHUNKED}} & train & 163 & 0,8896 & 0,7653 \\
+{\footnotesize\texttt{RERANK\_CHUNKED}} & validation & 16 & 1,0000 & 0,7746 \\
+{\footnotesize\texttt{RERANK\_FINETUNED}} & test & 18 & 0,8889 & 0,7500 \\
+{\footnotesize\texttt{RERANK\_FINETUNED}} & train & 163 & 0,8957 & 0,7668 \\
+{\footnotesize\texttt{RERANK\_FINETUNED}} & validation & 16 & 1,0000 & 0,7746 \\
+{\footnotesize\texttt{RERANK\_PRETRAINED}} & test & 18 & 0,8889 & 0,7500 \\
+{\footnotesize\texttt{RERANK\_PRETRAINED}} & train & 163 & 0,8957 & 0,7659 \\
+{\footnotesize\texttt{RERANK\_PRETRAINED}} & validation & 16 & 1,0000 & 0,7746 \\
+{\footnotesize\texttt{SE1}} & test & 18 & 0,0556 & 0,0079 \\
+{\footnotesize\texttt{SE1}} & train & 163 & 0,0552 & 0,0182 \\
+{\footnotesize\texttt{SE1}} & validation & 16 & 0,0625 & 0,0625 \\
+{\footnotesize\texttt{SE2}} & test & 18 & 0,8889 & 0,8194 \\
+{\footnotesize\texttt{SE2}} & train & 163 & 0,8896 & 0,7981 \\
+{\footnotesize\texttt{SE2}} & validation & 16 & 0,9375 & 0,7688 \\
+{\footnotesize\texttt{SE3}} & test & 18 & 0,8889 & 0,4224 \\
+{\footnotesize\texttt{SE3}} & train & 163 & 0,7853 & 0,3243 \\
+{\footnotesize\texttt{SE3}} & validation & 16 & 0,6250 & 0,2751 \\
+\end{longtable}\endgroup
+\source{outputs/retrieval_ai_evaluation_v1/synthetic/by_training_split.csv}

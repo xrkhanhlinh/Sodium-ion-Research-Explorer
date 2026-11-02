@@ -1,0 +1,2 @@
+# Isolated addition; use the existing project environment for scientific packages.
+python-dotenv==1.2.4

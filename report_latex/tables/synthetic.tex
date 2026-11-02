@@ -1,0 +1,22 @@
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.16}
+\caption{Exact source-ID recovery trên 197/200 query; không phải relevance.}\label{tab:synthetic}
+\begin{tabular}{p{.37\linewidth}rrrr}
+\toprule Method & Hit@1 & Hit@5 & Hit@10 & MRR@10 \\
+\midrule
+{\footnotesize\texttt{BM25\_CHEMICAL}} & 0,6345 & 0,8071 & 0,8376 & 0,7080 \\
+{\footnotesize\texttt{DENSE\_PRETRAINED}} & 0,6904 & 0,8528 & 0,8731 & 0,7600 \\
+{\footnotesize\texttt{DENSE\_FINETUNED}} & 0,7513 & 0,8782 & 0,8934 & 0,8066 \\
+{\footnotesize\texttt{DENSE\_CHUNKED}} & 0,8020 & 0,8934 & 0,9239 & 0,8436 \\
+{\footnotesize\texttt{HYBRID\_PRETRAINED}} & 0,7107 & 0,8528 & 0,8832 & 0,7741 \\
+{\footnotesize\texttt{HYBRID\_FINETUNED}} & 0,7462 & 0,8680 & 0,8883 & 0,7948 \\
+{\footnotesize\texttt{HYBRID\_CHUNKED}} & 0,7462 & 0,8883 & 0,9137 & 0,8056 \\
+{\footnotesize\texttt{RERANK\_PRETRAINED}} & 0,6853 & 0,8579 & 0,9036 & 0,7651 \\
+{\footnotesize\texttt{RERANK\_FINETUNED}} & 0,6904 & 0,8680 & 0,9036 & 0,7659 \\
+{\footnotesize\texttt{RERANK\_CHUNKED}} & 0,6853 & 0,8629 & 0,8985 & 0,7655 \\
+{\footnotesize\texttt{SE1}} & 0,0051 & 0,0406 & 0,0558 & 0,0208 \\
+{\footnotesize\texttt{SE2}} & 0,7411 & 0,8782 & 0,8934 & 0,7976 \\
+{\footnotesize\texttt{SE3}} & 0,1523 & 0,6142 & 0,7817 & 0,3293 \\
+{\footnotesize\texttt{BM25}} & 0,7614 & 0,8426 & 0,8985 & 0,7993 \\
+\bottomrule\end{tabular}
+\source{outputs/retrieval_ai_evaluation_v1/synthetic/summary.csv}
+\end{table}

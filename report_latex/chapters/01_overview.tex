@@ -1,0 +1,35 @@
+\chapter{Tổng quan đề tài}\label{ch:overview}
+\section{Bối cảnh và lý do lựa chọn đề tài}
+Pin sodium-ion là một hướng nghiên cứu lưu trữ năng lượng với nhiều bài toán về điện cực, điện giải, giao diện và chế tạo. Tổng quan của Yabuuchi và cộng sự mô tả nền tảng vật liệu và các thách thức điện hóa của hệ này \cite{sodium}. Đồ án không nghiên cứu thực nghiệm vật liệu hay đề xuất công thức pin; đối tượng nghiên cứu là thông tin được mô tả trong tài liệu khoa học và bằng sáng chế.
+
+Hai loại nguồn có cấu trúc và mục đích khác nhau. Publication thường trình bày câu hỏi khoa học, phương pháp và kết quả; Patent thường diễn đạt thành phần, quy trình, thiết bị và phạm vi bảo hộ. Cùng một khái niệm có thể xuất hiện bằng tên đầy đủ, viết tắt hoặc công thức. Ngược lại, một tài liệu chứa từ ``sodium'' và ``electrolyte'' chưa chắc nghiên cứu điện giải cho pin sodium-ion. Khi quy mô corpus tăng, đọc tuần tự hoặc tìm từ khóa đơn lẻ khó hỗ trợ đồng thời khám phá chủ đề và xác định tài liệu thỏa mãn một ý định cụ thể.
+
+Nhu cầu đặt ra là xây dựng một quy trình có thể kiểm tra được: biết dữ liệu nào được sử dụng, cách tạo biểu diễn, quy tắc xếp hạng và bằng chứng để đánh giá kết quả. Sự hiện diện của giao diện và các điểm tương đồng cao không đủ chứng minh chất lượng tìm kiếm. Vì vậy, thiết kế đánh giá được xem là một phần của bài toán nghiên cứu, thay vì bước minh họa sau cùng.
+
+\section{Bài toán nghiên cứu}
+Cho corpus $\mathcal D=\{d_1,\ldots,d_N\}$, mỗi tài liệu chứa Title, Abstract và metadata. Nhiệm vụ thứ nhất là tìm một cấu trúc chủ đề có thể diễn giải từ nội dung corpus. LDA mô tả tài liệu bằng phân bố trên $K$ chủ đề; BERTopic gom các biểu diễn ngữ nghĩa thành cụm và sinh từ khóa mô tả. Cấu trúc này hỗ trợ khảo sát xu hướng và lựa chọn nhóm tài liệu để đọc, không phải phân loại chuyên gia đã biết trước.
+
+Nhiệm vụ thứ hai là, với truy vấn $q$, tạo danh sách có thứ tự $R_q=(d_{(1)},\ldots,d_{(k)})$ từ corpus. Mục tiêu thực tế là đưa tài liệu đáp ứng ý định nghiên cứu lên các vị trí đầu. Ý định có thể chứa nhiều điều kiện: hệ pin, vật liệu/công thức, môi trường, nhiệt độ hoặc quan hệ kỹ thuật. ``Đúng miền'' và ``đáp ứng đầy đủ ý định'' là hai mức độ khác nhau. Chẳng hạn, tài liệu về điện giải nước nói chung chỉ đáp ứng một phần truy vấn yêu cầu water-in-salt cho pin sodium-ion.
+
+\section{Mục tiêu và phạm vi nghiên cứu}
+Đồ án sử dụng 13.702 tài liệu chính, không trộn tập UNCERTAIN vào thí nghiệm hiện tại. Văn bản khai thác là Title và Abstract, cùng metadata phục vụ truy vết và lọc. Các nguồn đã thu thập đến năm 2023; nghiên cứu không khẳng định corpus đại diện đầy đủ cho hiện trạng lĩnh vực vào năm 2026. Nguồn workbook được ghi nhận, nhưng artifacts không đủ để tái dựng chắc chắn toàn bộ truy vấn xuất dữ liệu hoặc quyền truy cập cơ sở dữ liệu ban đầu; báo cáo không tự bổ sung thông tin này.
+
+Mục tiêu triển khai gồm xây dựng corpus nhất quán; khảo sát LDA; thực hiện fine-tuning BGE đối chứng và BERTopic; xử lý Abstract dài bằng sliding windows; triển khai tìm kiếm lexical, dense, hybrid và reranker; xây dựng evaluator, qrels AI có provenance và benchmark tìm lại tài liệu nguồn. Mục tiêu kiểm chứng là xác định mỗi con số đo điều gì và chưa đo điều gì.
+
+Đóng góp hiện tại là tích hợp và kiểm chứng kỹ thuật các phương pháp đã có trên một miền ứng dụng cụ thể. Dự án chưa chứng minh một thuật toán chủ đề hoặc truy hồi mới. Nhãn chuyên gia độc lập chưa có; vì vậy báo cáo tách kết quả AI và proxy khỏi kết luận relevance chính thức.
+
+\section{Quy trình nghiên cứu tổng thể}
+Hình~\ref{fig:pipeline} biểu diễn năm giai đoạn theo yêu cầu nghiên cứu. Giai đoạn triển khai giao diện được tích hợp vào hệ thống tìm kiếm; đánh giá là một luồng độc lập đọc rankings và nhãn. Các mô hình nặng được chuẩn bị offline; app không huấn luyện lại khi khởi động.
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=6mm, every node/.style={font=\small},box/.style={draw=navy,rounded corners,fill=navy!4,text width=11.7cm,align=center,minimum height=12mm},arr/.style={-{Latex[length=2mm]},thick,teal}]
+\node[box] (a) {1. Tiền xử lý và xây dựng corpus\\Provenance, chất lượng, gần trùng và nhóm chia dữ liệu};
+\node[box,below=of a] (b) {2. LDA\\Bag-of-Words, khảo sát số chủ đề, coherence và stability};
+\node[box,below=of b] (c) {3. BGE và BERTopic\\Fine-tuning đối chứng; baseline 128 và chunking 256/overlap 64};
+\node[box,below=of c] (d) {4. Hệ thống tìm kiếm\\SE1/SE2/SE3 lịch sử; Search v2: BM25, dense, RRF, reranker};
+\node[box,below=of d] (e) {5. Thực nghiệm và đánh giá\\Topic metrics, relevance AI một phần, source recovery và latency};
+\draw[arr] (a)--(b);\draw[arr] (b)--(c);\draw[arr] (c)--(d);\draw[arr] (d)--(e);
+\end{tikzpicture}
+\caption{Năm giai đoạn nghiên cứu. Mũi tên biểu diễn trình tự triển khai; Search v2 không bắt buộc sử dụng kết quả LDA/BERTopic khi xếp hạng.}\label{fig:pipeline}
+\end{figure}
+Các quyết định được đối chiếu với cấu hình và implementation, thay vì chỉ dựa vào báo cáo cũ. Phụ lục cung cấp cấu hình, truy vấn, bảng mở rộng và đường dẫn bằng chứng; các chương sau lần lượt giải thích cơ sở toán học, triển khai và kết quả.

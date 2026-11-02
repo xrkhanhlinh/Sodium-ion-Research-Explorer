@@ -1,0 +1,39 @@
+\begingroup\small\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.16}
+\begin{longtable}{p{.34\linewidth}lrrr}
+\caption{Source recovery theo nguồn; 97 Patent và 100 Publication.}\label{tab:synthetic-source}\\
+\toprule Method & Nhóm & $n$ & Hit@10 & MRR@10 \\
+\midrule\endfirsthead
+\multicolumn{5}{l}{\textit{Bảng tiếp theo}}\\
+\toprule Method & Nhóm & $n$ & Hit@10 & MRR@10 \\
+\midrule\endhead
+\bottomrule\endfoot
+{\footnotesize\texttt{BM25}} & Patent & 97 & 0,9588 & 0,8650 \\
+{\footnotesize\texttt{BM25}} & Publication & 100 & 0,8400 & 0,7355 \\
+{\footnotesize\texttt{BM25\_CHEMICAL}} & Patent & 97 & 0,9691 & 0,8172 \\
+{\footnotesize\texttt{BM25\_CHEMICAL}} & Publication & 100 & 0,7100 & 0,6020 \\
+{\footnotesize\texttt{DENSE\_CHUNKED}} & Patent & 97 & 0,9794 & 0,9029 \\
+{\footnotesize\texttt{DENSE\_CHUNKED}} & Publication & 100 & 0,8700 & 0,7860 \\
+{\footnotesize\texttt{DENSE\_FINETUNED}} & Patent & 97 & 0,9381 & 0,8578 \\
+{\footnotesize\texttt{DENSE\_FINETUNED}} & Publication & 100 & 0,8500 & 0,7569 \\
+{\footnotesize\texttt{DENSE\_PRETRAINED}} & Patent & 97 & 0,8763 & 0,7682 \\
+{\footnotesize\texttt{DENSE\_PRETRAINED}} & Publication & 100 & 0,8700 & 0,7520 \\
+{\footnotesize\texttt{HYBRID\_CHUNKED}} & Patent & 97 & 0,9897 & 0,9158 \\
+{\footnotesize\texttt{HYBRID\_CHUNKED}} & Publication & 100 & 0,8400 & 0,6988 \\
+{\footnotesize\texttt{HYBRID\_FINETUNED}} & Patent & 97 & 0,9691 & 0,8904 \\
+{\footnotesize\texttt{HYBRID\_FINETUNED}} & Publication & 100 & 0,8100 & 0,7020 \\
+{\footnotesize\texttt{HYBRID\_PRETRAINED}} & Patent & 97 & 0,9485 & 0,8390 \\
+{\footnotesize\texttt{HYBRID\_PRETRAINED}} & Publication & 100 & 0,8200 & 0,7112 \\
+{\footnotesize\texttt{RERANK\_CHUNKED}} & Patent & 97 & 0,9485 & 0,8131 \\
+{\footnotesize\texttt{RERANK\_CHUNKED}} & Publication & 100 & 0,8500 & 0,7194 \\
+{\footnotesize\texttt{RERANK\_FINETUNED}} & Patent & 97 & 0,9588 & 0,8159 \\
+{\footnotesize\texttt{RERANK\_FINETUNED}} & Publication & 100 & 0,8500 & 0,7174 \\
+{\footnotesize\texttt{RERANK\_PRETRAINED}} & Patent & 97 & 0,9588 & 0,8136 \\
+{\footnotesize\texttt{RERANK\_PRETRAINED}} & Publication & 100 & 0,8500 & 0,7181 \\
+{\footnotesize\texttt{SE1}} & Patent & 97 & 0,0619 & 0,0228 \\
+{\footnotesize\texttt{SE1}} & Publication & 100 & 0,0500 & 0,0189 \\
+{\footnotesize\texttt{SE2}} & Patent & 97 & 0,9381 & 0,8359 \\
+{\footnotesize\texttt{SE2}} & Publication & 100 & 0,8500 & 0,7606 \\
+{\footnotesize\texttt{SE3}} & Patent & 97 & 0,7835 & 0,3411 \\
+{\footnotesize\texttt{SE3}} & Publication & 100 & 0,7800 & 0,3178 \\
+\end{longtable}\endgroup
+\source{outputs/retrieval_ai_evaluation_v1/synthetic/by_source.csv}

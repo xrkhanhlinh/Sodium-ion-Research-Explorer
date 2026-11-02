@@ -1,0 +1,109 @@
+\chapter{Thực nghiệm, đánh giá và thảo luận}\label{ch:experiments}
+\section{Thiết kế thực nghiệm}
+Thực nghiệm trả lời ba nhóm câu hỏi: cấu trúc topic thay đổi ra sao; fine-tuning/chunking cải thiện proxy nào; và hệ thống có đưa tài liệu phù hợp lên đầu hay không. Các nhóm câu hỏi dùng dữ liệu và metrics khác nhau. Corpus chính 13.702 tài liệu được giữ cố định, không thêm tài liệu để thuận lợi cho một method.
+
+Topic modeling sử dụng tokens Stage 1 đóng băng, Top10 keywords và coherence window 110. LDA có số topic chọn trước; BERTopic để số cụm phát sinh và loại topic $-1$ khỏi tính coherence/diversity. Embeddings chunked thay đổi cả context, window và pooling so với baseline; vì thế đây là so sánh hai cấu hình, chưa là ablation riêng full coverage.
+
+Benchmark tìm kiếm ban đầu có 24 truy vấn: 23 query miền và Q24 OOV control. Mười cấu hình v2 chạy trên toàn corpus; bốn baseline lịch sử được hợp vào evaluation để tạo 14 methods. Pool chung khử trùng theo cặp query--document có 942 cặp, từ các kết quả Top5. Có 322 tổ hợp query--method miền cần kiểm tra. Một tài liệu xuất hiện ở nhiều methods vẫn chỉ có một qrel cho cùng query, tránh chấm theo tên hệ thống.
+
+Q01/Q08/Q16/Q19/Q23 đã được dùng phát triển; 18 query còn lại cũng do tác giả soạn, chưa phải benchmark ngoài. Danh sách được giữ ở Phụ lục~\ref{app:queries}. Tính công bằng yêu cầu cùng pool, rubric, query coverage và policy missing. API thiếu quota không làm giảm grade tài liệu; missing được giữ trống. Trong phiên biên soạn chỉ đọc artifacts, không gọi API hoặc chạy lại encoding/training.
+
+Máy thực nghiệm ghi Python 3.10.11 trên Windows, CPU, RAM khoảng 8 GB. Các thời gian gắn với cấu hình và mẫu đo cụ thể. Không gộp latency có cache của batch benchmark với latency live không cache, không dùng 6 requests để suy throughput production.
+
+\section{Đánh giá kết quả Topic Modeling}
+\input{tables/lda_grid.tex}
+Ở Bảng~\ref{tab:lda-grid}, $K=20$ có $C_v$ cao nhất trong năm cấu hình seed cơ sở. $K=15$ có stability cao hơn ở protocol ba seed, nhưng điểm tổng hợp thấp hơn $K=20$. Diversity tăng ở một số $K$ lớn không đủ đảo kết luận vì coherence giảm. Điểm selection chỉ tồn tại ở hai cấu hình được chạy stability; các ô chưa khảo sát được ghi rõ.
+
+\input{tables/topic_comparison.tex}
+Các hình sau bổ sung đối chiếu biểu diễn baseline, phân bố chunked và biểu đồ LDA--BERTopic đã xuất. Hai UMAP được fit riêng nên trục và vị trí cụm không tương ứng một-một; màu/độ tách trên hình không phải thước đo relevance.
+\input{chapters/figures_topics.tex}
+Bảng~\ref{tab:topics} cho thấy LDA có coherence cao hơn và BERTopic có diversity cao hơn trong protocol keywords hiện tại. Không thể từ đó kết luận LDA tìm kiếm tốt hơn. LDA có 20 topic rộng và buộc gán mọi tài liệu; BERTopic có nhiều cụm nhỏ và loại noise, nên độ hạt và phạm vi thống kê khác nhau. Dù corpus tham chiếu coherence giống nhau, tập keywords và documents tham gia tạo representation khác nhau. Các số stability LDA và BERTopic baseline còn khác matching/seed protocol, vì vậy không xếp hạng trực tiếp hai giá trị như một bài test ổn định đồng nhất.
+
+Chunked tăng $C_v$ khoảng 0,0151, U\_Mass ít âm hơn và diversity tăng khoảng 0,0199; outlier ratio đồng thời tăng 2,69 điểm phần trăm, số topics giảm 8. Tăng noise có thể phản ánh cấu trúc mật độ thay đổi, không chứng minh nhiều tài liệu trở thành không liên quan. Có 1.599 tài liệu chuyển từ có topic sang noise và 1.230 chuyển chiều ngược, tăng ròng 369. Chỉ nhìn mức tăng ròng sẽ che mất hai luồng nội dung cần review.
+
+ARI gồm noise giữa hai phiên bản khoảng 0,3674, NMI khoảng 0,7069; ARI trên 9.352 common inliers khoảng 0,8294. Đây là đồng thuận giữa hai cách biểu diễn, không phải stability nhiều seed, càng không phải semantic accuracy. Việc chọn common inliers là điều kiện lọc có thể làm agreement cao hơn; không dùng con số đó để bỏ qua documents chuyển noise.
+\source{outputs/research_validation/between_versions_agreement.json}
+
+\input{tables/topic_examples.tex}
+Bảng~\ref{tab:topic-examples} trích các cụm lớn để minh họa cách diễn giải. Topic IDs giữa hai phiên bản không được coi là cùng ý nghĩa chỉ vì cùng số thứ tự. Các nhóm layered oxide và hard carbon thể hiện cấu trúc miền có thể nhận ra từ keywords, nhưng cần đọc documents và công thức trước khi đặt tên khoa học. Bộ review có 420 documents cho 84 topics, gồm ba đại diện membership cao và hai thành viên ngẫu nhiên mỗi topic; hiện là phiếu chưa được chuyên gia hoàn tất. Mẫu outlier phân tầng 40 hồ sơ phục vụ tìm lỗi, không dùng suy tỷ lệ lỗi toàn corpus.
+
+Audit token ghi nhận placeholder ở 355 documents, 716 lần. Đó là lỗi preprocessing kế thừa có thể ảnh hưởng topic representation; báo cáo không sửa lại vocabulary rồi giữ nguyên các số coherence cũ. Việc sửa cần phiên bản mới với manifests và chạy lại những đầu ra phụ thuộc.
+
+\section{Xây dựng bộ dữ liệu đánh giá độ liên quan}
+Rubric được chốt cùng query intent trước Gemini calls. Query intent là diễn giải tác giả, chưa được chuyên gia xác nhận. Grade 0: không liên quan hoặc trái điều kiện bắt buộc; 1: liên quan một phần/nền rộng; 2: đáp ứng trực tiếp ý chính nhưng thiếu chi tiết; 3: đáp ứng đầy đủ với bằng chứng. Nếu Title/Abstract không đủ, nhãn là UNRESOLVED. Thiếu Abstract hay thiếu một từ chính xác không tự động đồng nghĩa mâu thuẫn.
+
+Mỗi đầu vào gồm query, frozen intent, document ID, full Title và full Abstract. Method/rank/score và metadata nguồn tường minh không đưa vào prompt. Tuy vậy doc\_id hoặc cách hành văn vẫn có thể lộ loại nguồn, nên không khẳng định blinding hoàn toàn. Văn bản được coi là dữ liệu không đáng tin để hạn chế prompt injection. Gemini chỉ chấm relevance và nêu bằng chứng; metrics do Python tính, không yêu cầu LLM tự tính P@5.
+
+A và B là hai lượt gọi stateless cùng \artifact{gemini-3.5-flash-lite}, không có lịch sử chấm chung. Khi hai grades số trùng, code tạo consensus; khi khác, gọi C có thông tin để phân xử. UNRESOLVED chưa có grade số được xử lý riêng, không ép consensus. Judge C cùng họ model và có thể bị anchoring; quy trình không tương đương ba chuyên gia độc lập. Code kiểm tra kiểu grade, ID, confidence hữu hạn, enums trục lỗi và quote là substring không rỗng có thật trong Title/Abstract. Exact quote chỉ xác nhận trích dẫn tồn tại, không xác nhận cách suy luận đúng.
+
+Response sai cấu trúc/evidence được sửa theo số lượt giới hạn; code chọn response hợp lệ đầu tiên, không gọi lại một grade hợp lệ để tìm grade cao hơn. Responses bị loại và request IDs được giữ. Qrels chứa label method, status, expert-verified false, request hashes, model version và evidence; thiếu provenance không được nhận thành nhãn hợp lệ. Evaluator AI tách khỏi evaluator human; không nới điều kiện HUMAN\_INDEPENDENT/VERIFIED của luồng chuyên gia.
+
+\input{tables/judgment_status.tex}
+\input{tables/agreement.tex}
+\input{chapters/figures_coverage.tex}
+Theo Bảng~\ref{tab:label-status}, 116 cặp có consensus, 824 chưa đủ judges và hai cặp chờ phân xử. A/B đã có 118 cặp cùng grades số hợp lệ; 116 đồng ý. Exact agreement 98,31\% và weighted kappa 0,9938 chỉ trên phần này. A có 10 và B có 11 selected votes qua sửa cấu trúc; không có C hợp lệ. Mức agreement cao không có đối chiếu chuyên gia và có sai lệch cùng model. Chỉ Q11 và Q19 đủ pool; Q19 thuộc development, Q11 thuộc remaining.
+
+API thực tế đã trả RESOURCE\_EXHAUSTED HTTP 429; checkpoint dừng với nhãn và query còn thiếu. Quyền gửi dữ liệu và trạng thái project không billing do người dùng xác nhận, không phải hệ thống suy ra từ key. Client không dùng paid fallback; báo cáo không gọi lại dịch vụ. Trạng thái chờ API phải được giữ khi trình bày kết quả, không gọi pipeline đã hoàn tất chỉ vì code evaluator đã chạy.
+
+\section{Đánh giá chất lượng hệ thống tìm kiếm}
+\subsection{Từ query đến metric và ví dụ thực tế}
+Với mỗi query, hệ thống chuẩn hóa và kiểm tra input, sau đó tính ranking theo method. SE1 dùng LDA, SE2 dùng dense cùng topic bonus, SE3 hợp nhất hai ranking; v2 sử dụng lexical/dense và có thể rerank. Rankings lưu ID và vị trí; score mô hình không được dùng làm grade. Các cặp query--document được đưa vào pool chung, chấm theo rubric, kiểm tra provenance rồi tạo qrels. Evaluator nối ranking với qrels theo hai ID, không nối theo Title dễ trùng.
+
+Chỉ query đủ toàn pool mới được đưa vào mean cho tất cả methods. IDCG lấy từ toàn pool query, kể cả documents không thuộc Top5 của method đang xét. Q24 được tách khỏi domain mean. Phân biệt một empty run được khai báo rõ và một run bị thiếu là cần thiết: trường hợp thứ hai có thể là lỗi thu thập, không phải hệ thống thực sự trả rỗng.
+
+Ví dụ Q19 là ``Aqueous sodium-ion batteries with water-in-salt electrolytes''. Intent yêu cầu đồng thời hệ sodium-ion, môi trường nước và water-in-salt. Đây là development query và nhãn sau đây là AI chưa xác minh chuyên gia. Bảng~\ref{tab:worked-example} lấy đúng Top5 \artifact{RERANK_PRETRAINED}, không dựng grades giả định.
+\input{tables/worked_example.tex}
+\input{tables/worked_calculation.tex}
+Tài liệu hạng 4 có grade 1 dù vẫn thuộc miền điện giải nước; đây là lý do không chỉ đếm các từ gần query. Với grades đã lưu, P@5 bằng 0,8, RR@5 bằng 1 và nDCG được tính bằng DCG chia IDCG từ pool. Ví dụ chỉ minh họa cơ chế; Q19 đã được dùng phát triển và không đại diện cho chất lượng toàn benchmark.
+
+\subsection{So sánh relevance giữa 14 phương pháp}
+\input{tables/relevance_all.tex}
+Các điểm ở Bảng~\ref{tab:relevance} đều trên cùng hai query Q11/Q19. Ba nhánh reranker có cùng P@5 0,8, nDCG khoảng 0,8812 và MRR 1. Điều này hỗ trợ mô tả rằng các điểm của chúng trùng nhau trên phần đã chấm, chưa hỗ trợ kiểm định tương đương hoặc ưu thế trên 23 query. SE1 bằng 0 ở đây là kết quả hai query, không phải bằng chứng SE1 vô dụng trên mọi nhu cầu khám phá rộng.
+
+\input{tables/relevance_splits.tex}
+Bảng~\ref{tab:rel-splits} công bố độ phủ development và remaining. Mỗi nhóm mới có một query đủ pool. Mean chung hai query bị giới hạn bởi selection bias và phụ thuộc rubric/AI; CI bootstrap trên hai query không tạo thêm intents mới hoặc khử bias. Bảng paired deltas đã có trong artifacts nhưng chưa được dùng để tuyên bố phương pháp thắng, đặc biệt khi có 91 cặp so sánh.
+
+RRF v2 có point estimate tốt hơn một số dense methods trong phần này, song chưa tách lợi ích do hợp ứng viên khỏi reranking hoặc lexical tokenization. RRF lịch sử SE3 còn hợp topic search với dense-topic search, khác hybrid v2 hợp BM25 và dense. Không gom hai cấu hình chỉ vì đều dùng công thức RRF. Tham số $k=60$ và topic bonus 0,1 chưa được xác nhận tối ưu bằng relevance độc lập.
+
+\subsection{Proxy fine-tuning và synthetic source recovery}
+\input{tables/proxy.tex}
+\input{chapters/figures_proxy.tex}
+Bảng~\ref{tab:proxy} cho thấy cải thiện Title--Abstract proxy trên held-out split. CI chênh lệch không chứa 0 trong protocol bootstrap nhóm hiện tại. Kết luận được giới hạn ở checkpoints và proxy này, không bao gồm biến thiên training seed, semantic leakage chưa phát hiện hoặc tự động chuyển thành hiệu quả Search Engine.
+
+Synthetic benchmark chọn trước 200 documents không rỗng Abstract, cân bằng 100 Patent/100 Publication, seed 42. Generator chỉ nhận Abstract, không nhận Title/doc\_id. Query được kiểm tra cấu trúc, độ dài, sao chép Title và ngân sách token rồi đóng băng trước khi chạy retrieval. Kiểm tra hình thức không chứng minh query trung thành hoàn toàn với Abstract hoặc giống người dùng thực. Các lần sửa chỉ dành cho response chưa hợp lệ và chưa có own retrieval, không chỉnh query theo score.
+
+Có 197 query hợp lệ (97 Patent, 100 Publication); S020, S125, S173 chưa hợp lệ/chờ sửa, không được tính thành miss. Chạy 197 $\times$ 14 = 2.758 Top10 runs trên 13.702 candidates. Metric là:
+\begin{equation}\label{eq:hit}
+Hit@k=\frac1Q\sum_q\ind[d_q^{source}\in Top_k(q)],\quad
+MRR@10=\frac1Q\sum_q\frac{\ind[r_q\le10]}{r_q}.
+\end{equation}
+$d_q^{source}$ là ID tài liệu dùng sinh query, $r_q$ là hạng của nó và đóng góp 0 nếu vắng Top10. Không suy Recall semantic của toàn corpus từ một source ID; tài liệu khác trả lời tốt vẫn có thể không được tính là hit.
+\input{tables/synthetic.tex}
+\reportfigure{source_recovery.png}{Kết quả tìm lại đúng source ID trên 197/200 query do AI sinh. Các điểm không phải relevance của truy vấn người dùng.}{.98}{fig:source}
+\source{outputs/retrieval_ai_evaluation_v1/synthetic/source_recovery_metrics.png}
+
+DENSE\_CHUNKED có point estimate Hit@10 0,9239 và MRR@10 0,8436 cao nhất trong phần đã chạy. Reranker không vượt nó ở mục tiêu source recovery; điều này không mâu thuẫn với kết quả relevance hai query vì mục tiêu đo khác nhau. Reranker có thể ưu tiên tài liệu khác đáp ứng query, hoặc thực sự xếp hạng kém; thiếu labels cho các kết quả synthetic nên chưa phân biệt được hai nguyên nhân.
+
+Trong 197 source documents có 163 train, 16 validation và 18 test theo split fine-tuning cũ. Do đó không thể gọi toàn bộ benchmark là held-out-document test. Bảng~\ref{tab:synthetic-test} tách 18 test sources để chẩn đoán; kích thước này vẫn nhỏ và query do AI sinh. Source recovery trên corpus đóng khác một benchmark truy vấn tự nhiên có nhiều tài liệu relevant.
+\input{tables/synthetic_test.tex}
+
+Bootstrap nhóm cho DENSE\_CHUNKED cho CI Hit@10 khoảng [0,8832; 0,9594], MRR@10 [0,7959; 0,8879]. Các CI có điều kiện trên 197 query được chấp nhận và checkpoints, không bao gồm bất định sinh query/training. Kiểm tra offline đã tính lại 2.758 run records từ IDs với sai lệch CSV roundtrip tối đa khoảng $5,55\times10^{-17}$; PASS chỉ xác nhận tính nhất quán phần đã chạy, không xác nhận scientific relevance.
+
+\subsection{Phân tích lỗi theo truy vấn và chi phí vận hành}
+\input{tables/error_examples.tex}
+\input{tables/error_axes.tex}
+Các bảng lỗi lấy từ AI consensus grade dưới 2, không tự tạo negative từ các cặp chưa chấm. Có 86 result slots tương ứng 39 cặp khác nhau; một cặp có thể xuất hiện ở nhiều methods. Các trục lỗi gồm hệ pin, vật liệu/công thức, điều kiện và quan hệ kỹ thuật; một cặp có thể mang nhiều lỗi nên tổng các trục không phải số cặp duy nhất. A/B đồng grade nhưng khác trục được ghi bất đồng trục.
+
+Q11 minh họa tìm đúng miền sodium cathode nhưng sai đối tượng MXene; Q18 cho thấy ``khôi phục pin'' khác ``thu hồi kim loại cathode''; Q19 phân biệt điện giải nước rộng với water-in-salt. Đây là chẩn đoán AI từ văn bản đã có, chưa chứng minh nguyên nhân nội bộ mô hình. Các bước cần review là kiểm tra evidence, ngữ cảnh phủ định, đối tượng được nghiên cứu và quan hệ giữa thành phần, thay vì chỉ tìm token.
+
+Đo warm live không cache query/pair trên sáu requests, ba development queries, cho mean 4,8815 giây, median 4,5886 và max 6,1229 trên CPU. Có encoding BGE và reranking thật, không gồm engine/model loading hoặc service queue. Max sáu mẫu không phải p95 quần thể, chưa có concurrency/throughput. Thời gian replay có cache trong synthetic không được dùng thay số này.
+\source{outputs/search_upgrade_20261018/live_latency_scope.json}
+
+\section{Thảo luận độ tin cậy và hạn chế}
+Bằng chứng mạnh nhất hiện tại là tính truy vết và khả năng tái tính metric từ rankings: corpus/model/source đóng băng, hash đối chiếu, qrels có provenance và input validation. Full suite cuối được ghi JUnit 237 passed, không failure/error/skipped; đây là kết quả test đã lưu, không phải suite được chạy lại khi viết báo cáo. Tests dùng labels tổng hợp để kiểm tra toán; chúng không thay thế labels nghiên cứu. Baseline replay kiểm tra 96/96 Top5 lists khớp; không mở Qdrant trong phiên đánh giá AI hoặc soạn thảo này.
+
+Hạn chế dữ liệu gồm giới hạn nguồn đến 2023, relevance corpus heuristic, near-duplicate detection không hoàn hảo và phần Title-only. Hạn chế phương pháp gồm preprocessing topic có placeholder, BGE tokenizer không hiểu tương đương hóa học, mean pooling hòa loãng và passage selection lexical có thể bỏ sót. Hạn chế thiết kế gồm một seed training, thiếu ablation Title/window/pooling, chỉ 23 authored queries và năm development intents.
+
+Hạn chế đánh giá là nổi bật nhất: AI consensus mới 116/942 cặp, hai query đủ pool, A/B/C cùng họ model và chưa có chuyên gia đối chiếu. Pool lấy từ các phương pháp hiện tại có pooling bias; việc lọc query đủ labels có selection bias; confidence LLM chưa hiệu chỉnh. Kappa cao và CI hẹp trên một proxy không giải quyết các hạn chế này. Vì vậy chưa tuyên bố Search v2 tốt nhất, fine-tuning cần bỏ hoặc chunking đã tăng relevance tổng thể.
+
+Kết quả tích cực có thể phát biểu chính xác hơn: đã giải quyết cắt mất phần cuối Abstract ở nhánh chunked theo token coverage; fine-tuning cải thiện proxy Title--Abstract đã định nghĩa; đã có rankings so sánh, source recovery và quy trình đánh giá có kiểm tra. Để nâng kết luận khoa học, cần hoàn tất labels, kiểm tra độc lập một mẫu AI, mở rộng intents và thực hiện ablation trên phiên bản riêng, giữ nguyên các snapshot đã công bố.

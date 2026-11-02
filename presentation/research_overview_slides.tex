@@ -1,0 +1,198 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{multirow}
+
+\title[Tổng quan hệ thống truy xuất tài liệu]{Tổng quan hệ thống truy xuất tài liệu khoa học}
+\author{DALN Project}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{1. Bài toán}
+  \begin{block}{Vấn đề}
+    Với một kho dữ liệu khoa học lớn (hơn 13.700 tài liệu), người dùng cần tìm các bài báo phù hợp với truy vấn chuyên ngành như:
+    \begin{itemize}
+      \item chất liệu thay thế, vật liệu mới, công nghệ pin,\
+      \item truy vấn hỗn hợp nhiều thuộc tính,\
+      \item kết hợp tiêu chí từ khóa, nguồn, năm, và tính phù hợp ngữ nghĩa.
+    \end{itemize}
+  \end{block}
+
+  \vspace{0.3cm}
+  \begin{block}{Mục tiêu}
+    Xây dựng hệ thống truy xuất thông tin để:
+    \begin{itemize}
+      \item tìm tài liệu chính xác hơn,\
+      \item giữ tốc độ phản hồi hợp lý,\
+      \item hỗ trợ lọc theo nguồn, năm, và từ khóa bắt buộc,\
+      \item trả về Top-$k$ tài liệu kèm đoạn trích và giải thích.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{2. Dữ liệu và tiền xử lý}
+  \begin{block}{Dữ liệu đầu vào}
+    Mỗi tài liệu chứa các trường quan trọng: title, abstract, source, year, identifier, provenance.
+  \end{block}
+
+  \vspace{0.2cm}
+  \begin{block}{Tiền xử lý}
+    \begin{enumerate}
+      \item Lọc và chuẩn hóa văn bản: chữ thường, bỏ ký tự thừa, xử lý từ đồng nghĩa/alias.\
+      \item Giữ các trường quan trọng: title + abstract để làm cơ sở truy xuất.\
+      \item Tách token và chuẩn hóa chuỗi công thức/thuật ngữ chuyên ngành.\
+      \item Tạo biểu diễn lexical và dense cho mỗi tài liệu.\
+    \end{enumerate}
+  \end{block}
+
+  \vspace{0.2cm}
+  \begin{alertblock}{Lưu ý thực tế}
+    Tiền xử lý không chỉ là lowercase; cần bảo toàn các thuật ngữ kỹ thuật, tên chất liệu, thủ pháp và chuỗi có tính đặc thù.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{3. Mô hình 1: BM25 (truy xuất từ vựng)}
+  \begin{block}{Định nghĩa}
+    BM25 là mô hình truy xuất theo từ khóa, dựa trên tần suất từ trong tài liệu và độ hiếm của từ trong corpus.
+  \end{block}
+
+  \begin{equation}
+    \mathrm{BM25}(q,d) = \sum_{t \in q \cap d} \mathrm{IDF}(t) \cdot \frac{f(t,d)(k_1+1)}{f(t,d)+k_1\left(1-b+b\frac{|d|}{\mathrm{avgdl}}\right)}
+  \end{equation}
+
+  \begin{itemize}
+    \item $f(t,d)$: tần suất từ $t$ trong tài liệu $d$\
+    \item $|d|$: độ dài tài liệu\
+    \item $\mathrm{avgdl}$: độ dài trung bình của corpus\
+    \item $k_1, b$: tham số điều chỉnh độ nhạy và độ dài tài liệu.
+  \end{itemize}
+
+  \vspace{0.2cm}
+  \begin{block}{Ý nghĩa}
+    BM25 mạnh ở các truy vấn có từ khóa rõ ràng, đặc biệt khi tài liệu chứa các thuật ngữ chuyên ngành xuất hiện nhiều lần.
+  \end{block}
+\end{frame}
+
+\begin{frame}{4. Mô hình 2: Dense retrieval bằng embedding}
+  \begin{block}{Định nghĩa}
+    Dense retrieval biễu diễn cả truy vấn và tài liệu thành vector trong không gian ngữ nghĩa tương tự.
+  \end{block}
+
+  \begin{equation}
+    \mathrm{sim}(q,d)=\cos(\mathbf{e}_q,\mathbf{e}_d)=\frac{\mathbf{e}_q^\top \mathbf{e}_d}{\|\mathbf{e}_q\|\|\mathbf{e}_d\|}
+  \end{equation}
+
+  \begin{itemize}
+    \item $\mathbf{e}_q$: embedding của truy vấn\
+    \item $\mathbf{e}_d$: embedding của tài liệu\
+    \item BGE pretrained là mô hình embedding chủ đạo dùng để đo độ tương đồng ngữ nghĩa.\
+  \end{itemize}
+
+  \vspace{0.2cm}
+  \begin{block}{Ưu điểm}
+    Dense retrieval tốt hơn ở trường hợp truy vấn có ý nghĩa tương đương nhưng không trùng đúng từ khóa.
+  \end{block}
+\end{frame}
+
+\begin{frame}{5. Hybrid retrieval và reranker}
+  \begin{block}{Hybrid search}
+    Kết hợp đồng thời hai tín hiệu:
+    \begin{itemize}
+      \item BM25: mạnh về khớp từ khóa\
+      \item Dense: mạnh về ngữ nghĩa\
+    \end{itemize}
+  \end{block}
+
+  \begin{equation}
+    \mathrm{RRF}(d) = \sum_{r \in \{\mathrm{BM25},\mathrm{Dense}\}} \frac{1}{k + \mathrm{rank}_r(d)}
+  \end{equation}
+
+  \begin{block}{Reranker}
+    Sau khi lấy Top-$N$ ứng viên, dùng mô hình rerank để sắp xếp lại theo mức độ liên quan thực sự.
+    \begin{equation}
+      s_{rerank}(q,d)=f_\theta([q;d])
+    \end{equation}
+    với $f_\theta$ là mô hình cross-encoder (ví dụ MiniLM reranker).
+  \end{block}
+\end{frame}
+
+\begin{frame}{6. Quy trình hệ thống}
+  \begin{enumerate}
+    \item \\textbf{Thu thập và làm sạch dữ liệu}: loại bỏ văn bản không hợp lệ, giữ title + abstract.\
+    \item \\textbf{Tiền xử lý văn bản}: chuẩn hóa, token hóa, giữ tên thuật ngữ chuyên ngành.\
+    \item \\textbf{Tạo chỉ mục}: xây dựng index BM25 và embedding cho toàn bộ corpus.\
+    \item \\textbf{Truy vấn ban đầu}: lấy Top-$N$ tài liệu từ BM25 và dense.\
+    \item \\textbf{Hội tụ và sắp xếp}: hợp nhất bằng hybrid fusion, sau đó rerank.\
+    \item \\textbf{Lọc bổ sung}: nguồn, năm, từ khóa bắt buộc, các ràng buộc chuyên môn.\
+    \item \\textbf{Trả kết quả}: Top-$k$ tài liệu, đoạn trích, và dẫn chứng nội dung.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{7. Mô hình hiệu quả: nhìn từ góc độ toán học}
+  \begin{block}{Tổng thể}
+    Hệ thống tối ưu một hàm mục tiêu xấp xỉ độ phù hợp giữa truy vấn $q$ và tài liệu $d$:
+    \begin{equation}
+      \hat{d} = \arg\max_{d \in \mathcal{D}} \; S(q,d)
+    \end{equation}
+    với
+    \begin{equation}
+      S(q,d) = \alpha \cdot \mathrm{BM25}(q,d) + \beta \cdot \mathrm{sim}(q,d) + \gamma \cdot \mathrm{Rerank}(q,d)
+    \end{equation}
+  \end{block}
+
+  \begin{itemize}
+    \item $\alpha, \beta, \gamma$: trọng số phức hợp\
+    \item Mục tiêu là nâng độ phù hợp tổng hợp giữa khớp từ khóa và ngữ nghĩa.\
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{8. Kết quả mong đợi / đầu ra hệ thống}
+  \begin{block}{Kết quả đầu ra}
+    Hệ thống trả về:
+    \begin{itemize}
+      \item Top-$k$ tài liệu liên quan nhất,\
+      \item tiêu đề + abstract,\
+      \item năm xuất bản và nguồn,\
+      \item đoạn trích phù hợp,\
+      \item điểm số tương đồng và lý do lọt top.\
+    \end{itemize}
+  \end{block}
+
+  \vspace{0.3cm}
+  \begin{block}{Giá trị thực tế}
+    Hệ thống giúp giảm thời gian tìm kiếm, tăng khả năng tái sử dụng dữ liệu khoa học và hỗ trợ khám phá topic mới trong corpus lớn.
+  \end{block}
+\end{frame}
+
+\begin{frame}{9. Kết luận}
+  \begin{block}{Tóm tắt}
+    Mô hình truy xuất tài liệu hiệu quả không chỉ dựa trên từ khóa, mà cần kết hợp:
+    \begin{itemize}
+      \item tiền xử lý văn bản hợp lý,\
+      \item biểu diễn tần suất và ngữ nghĩa,\
+      \item hợp nhất nhiều tín hiệu bằng hybrid retrieval,\
+      \item reranking để nâng độ chính xác cuối cùng.
+    \end{itemize}
+  \end{block}
+
+  \vspace{0.3cm}
+  \begin{center}
+    \Large \textbf{Hệ thống truy xuất tài liệu khoa học là sự kết hợp giữa lexical search, semantic search và reranking.}
+  \end{center}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,27 @@
+\begingroup\small\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.16}
+\begin{longtable}{p{.19\linewidth}p{.40\linewidth}p{.31\linewidth}}
+\caption{Cấu hình thực nghiệm và app hiện tại; phạm vi được phân biệt theo thành phần.}\label{tab:configuration}\\
+\toprule Thành phần & Tham số & Giá trị \\
+\midrule\endfirsthead
+\multicolumn{3}{l}{\textit{Bảng tiếp theo}}\\
+\toprule Thành phần & Tham số & Giá trị \\
+\midrule\endhead
+\bottomrule\endfoot
+Stage 1 & Language confidence & 0,90 \\
+Stage 1 & Title / Abstract near-duplicate thresholds & 0,88 / 0,80 \\
+LDA & K khảo sát / passes / iterations & 10,15,20,25,30 / 10 / 100 \\
+LDA & alpha / eta / seed cơ sở & asymmetric / symmetric / 42 \\
+BGE & Dimension / train max tokens & 768 / 128 \\
+Fine-tuning & Epoch / batch / learning rate & 1 / 8 / $2\times10^{-5}$ \\
+Fine-tuning & Block trainable / temperature & 1 block cuối / 0,05 \\
+Chunking & Max pair / overlap / pooling & 256 / 64 / normalized mean CLS \\
+UMAP & Neighbors / components / min-dist & 15 / 5 / 0 \\
+HDBSCAN & Min cluster / min samples / selection & 30 / 10 / EOM \\
+Search v2 & Candidate / rerank depth / RRF k & 100 / 50 / 60 \\
+Search v2 & Title weight / BM25 k1 / b & 2 / 1,5 / 0,75 \\
+Reranker & Passage / overlap / max passages & 320 / 64 / 2 \\
+Reranker & Max pair / Title budget / batch & 512 / 80 / 4 \\
+Gemini & Model A/B/C/generator & gemini-3.5-flash-lite \\
+Evaluation & Bootstrap repeats / seed & 2.000 / 42 \\
+\end{longtable}\endgroup
+\source{configs/config.yaml; configs/stage2.yaml; configs/stage3.yaml; configs/search_v2.json; outputs/retrieval_ai_evaluation_v1/protocol.json}

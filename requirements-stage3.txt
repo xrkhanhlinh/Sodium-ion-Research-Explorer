@@ -1,0 +1,16 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+-r requirements-stage2.txt
+# PyTorch installed from the official CPU wheel index.
+torch==2.14.1+cpu
+sentence-transformers==6.1.0
+transformers==5.20.1
+tokenizers==0.23.3
+huggingface-hub==1.33.0
+safetensors==0.8.0
+bertopic==0.17.4
+umap-learn==0.5.12
+hdbscan==0.8.44
+numba==0.68.0
+llvmlite==0.50.0
+pynndescent==0.6.0
+plotly==7.1.0

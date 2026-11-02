@@ -1,0 +1,22 @@
+\begin{table}[H]\centering\small\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.16}
+\caption{Relevance AI một phần: cùng Q11/Q19, 2/23 queries; chưa có chuyên gia.}\label{tab:relevance}
+\begin{tabular}{p{.39\linewidth}rrr}
+\toprule Method & P@5 & nDCG@5 & MRR@5 \\
+\midrule
+{\footnotesize\texttt{BM25\_CHEMICAL}} & 0,6000 & 0,6377 & 0,6667 \\
+{\footnotesize\texttt{DENSE\_PRETRAINED}} & 0,4000 & 0,5271 & 1,0000 \\
+{\footnotesize\texttt{DENSE\_FINETUNED}} & 0,4000 & 0,4904 & 0,7500 \\
+{\footnotesize\texttt{DENSE\_CHUNKED}} & 0,6000 & 0,5729 & 0,6250 \\
+{\footnotesize\texttt{HYBRID\_PRETRAINED}} & 0,8000 & 0,8327 & 1,0000 \\
+{\footnotesize\texttt{HYBRID\_FINETUNED}} & 0,8000 & 0,7972 & 1,0000 \\
+{\footnotesize\texttt{HYBRID\_CHUNKED}} & 0,8000 & 0,7436 & 0,7500 \\
+{\footnotesize\texttt{RERANK\_PRETRAINED}} & 0,8000 & 0,8812 & 1,0000 \\
+{\footnotesize\texttt{RERANK\_FINETUNED}} & 0,8000 & 0,8812 & 1,0000 \\
+{\footnotesize\texttt{RERANK\_CHUNKED}} & 0,8000 & 0,8812 & 1,0000 \\
+{\footnotesize\texttt{SE1}} & 0,0000 & 0,0000 & 0,0000 \\
+{\footnotesize\texttt{SE2}} & 0,4000 & 0,4904 & 0,7500 \\
+{\footnotesize\texttt{SE3}} & 0,3000 & 0,3427 & 0,6250 \\
+{\footnotesize\texttt{BM25}} & 0,7000 & 0,7731 & 1,0000 \\
+\bottomrule\end{tabular}
+\source{outputs/retrieval_ai_evaluation_v1/summary.csv}
+\end{table}

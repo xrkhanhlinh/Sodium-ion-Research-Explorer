@@ -1,0 +1,14 @@
+\begingroup\small\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.16}
+\begin{longtable}{lrrrrr}
+\caption{Chỉ số topic trên tokens tham chiếu đóng băng; khác độ hạt và policy noise.}\label{tab:topics}\\
+\toprule Mô hình & Topics & $C_v$ & U\_Mass & Diversity & Outlier \\
+\midrule\endfirsthead
+\multicolumn{6}{l}{\textit{Bảng tiếp theo}}\\
+\toprule Mô hình & Topics & $C_v$ & U\_Mass & Diversity & Outlier \\
+\midrule\endhead
+\bottomrule\endfoot
+LDA K=20 & 20 & 0,5716 & -1,9372 & 0,7400 & 0,00\% \\
+BERTopic 128 & 92 & 0,4628 & -9,2563 & 0,8587 & 20,08\% \\
+BERTopic chunked & 84 & 0,4779 & -9,0806 & 0,8786 & 22,77\% \\
+\end{longtable}\endgroup
+\source{outputs/tables/stage3/lda_vs_bertopic.csv; outputs/bertopic_chunked/metrics.json}

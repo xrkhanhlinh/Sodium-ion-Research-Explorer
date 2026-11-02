@@ -1,0 +1,41 @@
+\chapter{Cấu hình và protocol tái lập}\label{app:config}
+\input{tables/configuration.tex}
+Cấu hình trong Bảng~\ref{tab:configuration} được đọc từ files hiện tại và đối chiếu các contracts của artifact. Việc mã nguồn hiện tại chứa alias Stage4 không có nghĩa implementation cũ đã bị mất: ZIP archive và manifest giữ nguồn trước cleanup. Công thức SE1/SE2/SE3 trong báo cáo dựa vào bản archived, trong khi mô tả app dựa vào Search v2 hiện hành.
+
+\section{Quy tắc diễn giải trạng thái}
+\artifact{AI_CONSENSUS_UNVERIFIED} chỉ nhãn AI đã qua quy tắc chấp nhận; \artifact{PENDING_JUDGES} thiếu lượt chấm; \artifact{PENDING_ADJUDICATION} đang chờ C; UNRESOLVED là chưa đủ căn cứ. Không cộng các nhóm chưa đủ điều kiện vào tử số hay mẫu số relevance. Chỉ Q11/Q19 có full pool tại snapshot, nên hai query được dùng chung cho mọi method; development/remaining lần lượt mới có 1/5 và 1/18.
+
+Sau khi có nhãn bổ sung, phải sinh lại các bảng theo cùng protocol và đọc lại phần nhận xét, không chỉ thay số rồi giữ nguyên các kết luận partial. Script dựng bảng từ chối snapshot đã đổi khỏi điều kiện biên soạn hiện tại để tránh âm thầm làm nội dung tĩnh sai. API key và nội dung tệp môi trường không được script báo cáo đọc hoặc sao chép.
+
+\section{Kiểm chứng và đơn vị số liệu}
+Mọi mean relevance là macro-average theo query đủ pool; synthetic là exact source-ID recovery theo query đã chấp nhận. Kết quả LDA/BERTopic dùng keywords theo topic và các tập noise khác nhau. Khoảng tin cậy có điều kiện trên các nhãn/checkpoints cố định, không biến hai query thành một mẫu lớn hơn. Giá trị phần trăm noise sử dụng denominator 13.702; điểm tăng noise được mô tả theo điểm phần trăm, khác tỷ lệ tăng tương đối.
+
+\chapter{Truy vấn và kết quả mở rộng}\label{app:queries}
+\input{tables/queries.tex}
+Q24 là truy vấn OOV control, được lưu riêng và loại khỏi mean miền. Nội dung query xuất từ artifact; đánh dấu development thể hiện đã dùng để phát triển, không khẳng định 18 query còn lại là test ngoài độc lập.
+\input{tables/coverage.tex}
+\input{tables/synthetic_source.tex}
+\input{tables/synthetic_split.tex}
+\chapter{Bản đồ bằng chứng và khả năng tái lập}\label{app:evidence}
+Thư mục báo cáo chứa bản sao các hình đã sử dụng, không sửa biểu đồ thực nghiệm gốc. \artifact{evidence_manifest.json} lưu SHA-256 nguồn và phép tổng hợp bảng; \artifact{code_review_inventory.json} ghi các module/config được đọc để đối chiếu, không tuyên bố kiểm chứng toàn bộ hành vi runtime chỉ qua static inspection. \artifact{validation.json} ghi kiểm tra liên kết, citations, số liệu, snapshot và biên dịch khi có môi trường phù hợp.
+
+Để tái dựng bảng, từ gốc dự án chạy \artifact{.venv/Scripts/python.exe report_latex/build_artifacts.py}. Sau đó biên dịch bằng XeLaTeX/BibTeX hoặc Tectonic theo README. Đây chỉ là bước đọc dữ liệu và dàn trang, không huấn luyện mô hình, encode lại corpus hoặc gọi Gemini.
+\input{tables/evidence.tex}
+\chapter{Figures thực nghiệm mở rộng}\label{app:figures}
+\section{Thống kê mô tả corpus}
+Các biểu đồ dưới đây là outputs đã có, không được tạo từ một corpus mới. Tần suất token, n-gram và metadata keywords phản ánh quy tắc xử lý tương ứng; không coi chúng là nhãn chủ đề chuyên gia. Các năm ít mẫu có thể gây biến động tỷ lệ lớn.
+\input{chapters/figures_eda_appendix.tex}
+\section{LDA theo thời gian và từ khóa}
+Soft topic mass được thống kê theo năm và nguồn. Không dùng sự tăng tỷ lệ trong corpus để khẳng định tăng trưởng toàn bộ lĩnh vực, vì phạm vi thu thập và mức độ đầy đủ các năm không đồng nhất.
+\input{chapters/figures_lda_appendix.tex}
+\section{BERTopic baseline và toàn bộ keywords chunked}
+Các hình baseline dùng 92 topics, trong khi bảy trang keywords chunked dùng 84 topics. Topic IDs của hai phiên bản không có ánh xạ đồng nhất mặc định. Từ khóa là c-TF-IDF trên tokens đóng băng, còn giữ các giới hạn preprocessing đã nêu.
+\input{chapters/figures_topic_appendix.tex}
+\input{chapters/figures_keywords_appendix.tex}
+\section{Backend tìm kiếm lịch sử và giao diện Stage5}
+Các figures Stage4/Stage5 dưới đây được giữ như bằng chứng phiên bản lịch sử. Chúng không mô tả latency, giao diện hoặc mặc định của Search v2 hiện tại. Overlap và số lượt thay đổi ranking không phải thước đo relevance; ảnh giao diện không phải một thí nghiệm chất lượng độc lập.
+\input{chapters/figures_legacy_appendix.tex}
+\input{chapters/figures_screens_appendix.tex}
+\section{Biểu đồ relevance AI chưa đủ mẫu}
+Hình này chỉ có một query remaining đủ pool, khác mean hai query trình bày trong chương thực nghiệm. Việc đưa hình vào phụ lục nhằm minh bạch outputs hiện có, không bổ sung bằng chứng cho một tuyên bố thắng trên benchmark đầy đủ.
+\input{chapters/figures_ai_appendix.tex}

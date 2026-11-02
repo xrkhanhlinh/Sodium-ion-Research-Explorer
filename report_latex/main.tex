@@ -1,0 +1,115 @@
+% !TeX program = xelatex
+\documentclass[12pt,a4paper,oneside]{report}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Consolas}[Scale=0.85]
+\usepackage[vietnamese]{babel}
+\usepackage[left=30mm,right=23mm,top=25mm,bottom=25mm,headheight=16pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx,booktabs,longtable,tabularx,array,multirow}
+\usepackage[table]{xcolor}
+\definecolor{navy}{HTML}{183B56}
+\definecolor{teal}{HTML}{167D8D}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{caption,subcaption,float,placeins}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{setspace}
+\setstretch{1.23}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.5em}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Sodium-ion Research Explorer}
+\fancyhead[R]{\small Báo cáo đồ án}
+\fancyfoot[C]{\thepage}
+\usepackage{titlesec}
+\titleformat{\chapter}[display]{\normalfont\bfseries\color{navy}}{\large\chaptertitlename\ \thechapter}{7pt}{\LARGE}
+\titlespacing*{\chapter}{0pt}{0pt}{20pt}
+\usepackage{cite}
+\usepackage{xurl}
+\usepackage[unicode,hidelinks,pdfauthor={Sodium-ion Research Explorer},pdftitle={Khám phá chủ đề và tìm kiếm tài liệu sodium-ion}]{hyperref}
+\hypersetup{bookmarksnumbered=true}
+\setcounter{tocdepth}{1}
+\setcounter{secnumdepth}{2}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{1.2em}
+\setlength{\emergencystretch}{3em}
+\newcommand{\artifact}[1]{\texttt{\nolinkurl{#1}}}
+\newcommand{\source}[1]{\par\noindent{\footnotesize\textit{Nguồn artifact:} \artifact{#1}.}\par}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\ind}{\mathbf{1}}
+\newcommand{\reportfigure}[4]{\begin{figure}[htbp]\centering\includegraphics[width=#3\linewidth,height=.69\textheight,keepaspectratio]{figures/#1}\caption{#2}\label{#4}\end{figure}}
+\newcommand{\evidencefigure}[5]{\begin{figure}[htbp]\centering\includegraphics[width=.98\linewidth,height=#5\textheight,keepaspectratio]{figures/#1}\caption{#2}\label{#3}\source{#4}\end{figure}}
+\input{tables/snapshot_macros.tex}
+\begin{document}
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\centering
+\vspace*{12mm}
+{\Large\bfseries BÁO CÁO ĐỒ ÁN NGHIÊN CỨU\par}
+\vspace{15mm}
+{\Huge\bfseries\color{navy} Khám phá chủ đề và tìm kiếm tài liệu nghiên cứu về pin sodium-ion\par}
+\vspace{10mm}
+{\Large LDA, BGE, BERTopic và truy hồi kết hợp\par}
+\vspace{17mm}
+\begin{minipage}{.87\textwidth}
+\setstretch{1.25}
+Báo cáo phương pháp, triển khai và đánh giá trên corpus 13.702 tài liệu Patent/Publication. Nội dung được đối chiếu với mã nguồn và artifacts thực nghiệm; phân biệt kết quả đã thực hiện, kết quả đánh giá AI còn một phần và nhãn chuyên gia chưa có.
+\end{minipage}
+\vfill
+{\large Sodium-ion Research Explorer\par}
+{\large Bản tổng hợp ngày 19 tháng 10 năm 2026\par}
+\vspace{5mm}
+{\small Không huấn luyện lại mô hình trong quá trình biên soạn.\par}
+\end{titlepage}
+\pagenumbering{roman}
+\hypersetup{pageanchor=true}
+\chapter*{Tóm tắt}
+\addcontentsline{toc}{chapter}{Tóm tắt}
+Đồ án xây dựng hệ thống khám phá chủ đề và tìm kiếm tài liệu về pin sodium-ion từ 13.702 văn bản đã được lựa chọn, gồm 5.933 Patent và 7.769 Publication. Hai nhiệm vụ được tách biệt: mô hình chủ đề hỗ trợ khảo sát corpus, trong khi hệ thống truy hồi xếp hạng tài liệu theo nhu cầu cụ thể. LDA với 20 chủ đề được dùng làm đối chứng xác suất; BGE-base-en-v1.5 cung cấp biểu diễn ngữ nghĩa cho BERTopic và dense retrieval. Thí nghiệm fine-tuning cập nhật block encoder cuối trên cặp Title--Abstract, không coi cặp này là nhãn relevance của người dùng.
+
+Nhánh chunking tạo 29.139 đoạn, bao phủ toàn bộ 3.947.927 WordPiece tokens của các Abstract hiện có, rồi tổng hợp các vector CLS bằng trung bình và chuẩn hóa L2. BERTopic chunked tạo 84 chủ đề so với 92 ở baseline; $C_v$ tăng từ 0,4628 lên 0,4779 và diversity tăng từ 0,8587 lên 0,8786, đồng thời outlier rate tăng từ 20,08\% lên 22,77\%. Các thay đổi này chưa chứng minh ưu thế tổng thể hoặc tác dụng riêng của full coverage.
+
+Search v2 kết hợp BM25, dense BGE, RRF và cross-encoder reranking. Đánh giá AI đã có \ConsensusPairs/942 cặp đồng thuận số, nhưng mới \CompleteQueries/23 truy vấn đủ pool; các điểm P@5, nDCG@5 và MRR@5 chỉ là ước lượng có điều kiện trên phần đã chấm. Synthetic benchmark đã thực hiện 197/200 truy vấn với 14 phương pháp trên toàn corpus; đây là tìm lại đúng tài liệu nguồn, không phải đánh giá relevance tổng quát. Bài đóng góp một hệ thống tích hợp có truy vết và các thí nghiệm đối chứng; chưa khẳng định thuật toán mới hoặc phương pháp tìm kiếm thắng tổng thể. Đánh giá chuyên gia độc lập, ablation và khảo sát khả năng khái quát vẫn là các nhiệm vụ chưa hoàn thành.
+\chapter*{Phạm vi và quy ước đọc báo cáo}
+\addcontentsline{toc}{chapter}{Phạm vi và quy ước đọc báo cáo}
+Báo cáo chốt bằng chứng từ workspace tại thời điểm biên soạn. Các đường dẫn artifact tính tương đối từ thư mục gốc dự án. Bảng tự động được tạo bằng script riêng, kèm SHA-256 của các nguồn đã sử dụng. Không gọi API, không mở Qdrant và không thay đổi corpus hoặc checkpoints để tạo báo cáo.
+
+SE1, SE2 và SE3 là các phương pháp lịch sử được giữ để so sánh offline. App hiện tại dùng Search v2, mặc định \artifact{RERANK_PRETRAINED}; không chạy LDA hoặc cộng topic bonus khi xếp hạng v2. Thuật ngữ ``full-document'' trong thí nghiệm chunking chỉ toàn bộ Title/Abstract có trong corpus, không có nghĩa đã thu thập toàn văn bài báo hoặc mô tả đầy đủ bằng sáng chế.
+
+Kết quả AI mang trạng thái \artifact{AI_CONSENSUS_UNVERIFIED}; không được chuyển thành nhãn chuyên gia. Trạng thái API hiện tại là chờ quota, không phải hoàn tất đánh giá. Báo cáo không đưa API key, nội dung tệp môi trường hay thông tin nhận thực vào tài liệu.
+\begingroup\small\setstretch{1.0}\setlength{\parskip}{0pt}\tableofcontents\endgroup
+\listoffigures
+\listoftables
+\chapter*{Ký hiệu và thuật ngữ}
+\addcontentsline{toc}{chapter}{Ký hiệu và thuật ngữ}
+\begin{tabularx}{\textwidth}{lX}
+\toprule Ký hiệu & Ý nghĩa \\\midrule
+$N,V,K$ & Số tài liệu, kích thước từ vựng và số chủ đề.\\
+$\theta_d,\phi_k$ & Phân bố chủ đề của tài liệu; phân bố từ của chủ đề.\\
+$e_d,e_q$ & Vector tài liệu và truy vấn đã chuẩn hóa L2.\\
+$g(q,d)$ & Relevance grade 0--3; thiếu/UNRESOLVED không phải grade 0.\\
+qrels & Bảng nhãn cho các cặp query--document.\\
+pool & Hợp các tài liệu được lấy từ nhiều phương pháp để chấm.\\
+proxy & Bài toán thay thế, không đồng nhất với nhu cầu thực tế.\\
+CI & Khoảng tin cậy có điều kiện trên protocol và dữ liệu đánh giá.\\
+\bottomrule
+\end{tabularx}
+\clearpage
+\pagenumbering{arabic}
+\input{chapters/01_overview.tex}
+\input{chapters/02_methods.tex}
+\input{chapters/03_implementation.tex}
+\input{chapters/04_experiments.tex}
+\input{chapters/05_conclusion.tex}
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Tài liệu tham khảo}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+\appendix
+\input{chapters/appendix.tex}
+\end{document}

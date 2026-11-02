@@ -1,0 +1,2 @@
+-r requirements-stage5.txt
+# AppTest and pytest are supplied by the existing dependency chain.

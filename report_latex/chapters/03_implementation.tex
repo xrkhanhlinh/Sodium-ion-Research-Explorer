@@ -1,0 +1,67 @@
+\chapter{Dữ liệu và quy trình triển khai}\label{ch:implementation}
+\section{Thu thập và xây dựng tập dữ liệu}
+Hai workbook \artifact{patent.xlsx} và \artifact{publication.xlsx} là đầu vào thực tế; metadata ghi nguồn file, sheet và hàng gốc. Có 8.657 Patent và 11.919 Publication trước khi áp dụng tiêu chí corpus. Các trường tên khác nhau được ánh xạ về schema chung: \artifact{doc_id}, Title, Abstract, source, year, identifier và các trường truy vết. Đối với Patent, năm được lấy theo ngày công bố hợp lệ sớm nhất trong trường PD theo cấu hình, không tự coi mọi ngày metadata là năm xuất bản tương đương.
+
+Pipeline xử lý cấu trúc dòng, ký tự, chuỗi thiếu, ngôn ngữ, tài liệu rút bài và bản trùng được xác nhận. Language detection xét tối đa 1.400 ký tự với ngưỡng confidence 0,90; confidence này là đầu ra công cụ, không phải xác suất đã hiệu chỉnh trên miền pin. CORE/RELATED được xác định bởi context rules, không phải chuyên gia. Tiêu chí tối thiểu năm token LDA giúp loại đầu vào không đủ dùng theo policy, có thể gây selection bias với tài liệu ngắn.
+
+\input{tables/cleaning.tex}
+Bảng~\ref{tab:cleaning} trình bày disposition loại trừ nhau. Tổng 6.598 \artifact{RELEVANCE_REVIEW} tương ứng tập cần rà soát thêm, không được dùng để tăng kích thước corpus chính. Corpus cuối có 13.702 ID duy nhất; 52 bản ghi không có Abstract vẫn giữ Title thật. Không có bằng chứng rằng các tài liệu bị loại đều không liên quan, nên kết quả chỉ được diễn giải trên corpus đã chốt.
+
+\reportfigure{data_composition.png}{Thành phần dữ liệu trong artifact chuẩn bị dữ liệu. Hình mô tả corpus và nguồn, không biểu diễn phân bố relevance của người dùng.}{.92}{fig:data}
+\source{outputs/figures/data_preparation/figure_01_dataset_composition.png}
+
+Các nhóm gần trùng dùng chuẩn hóa nội dung và các quy tắc similarity. Jaccard giữa tập từ $A,B$ là $|A\cap B|/|A\cup B|$; near-duplicate thresholds gồm Title similarity 0,88 và Abstract Jaccard 0,80. Không phải mọi similarity đều là Jaccard; tên phép đo và ngưỡng tương ứng được giữ đúng cấu hình. Union-find gộp các quan hệ vào \artifact{split_group_id}. Patent có identifier khác nhau không tự bị xóa chỉ vì văn bản giống nhau.
+
+Artifacts \artifact{main_corpus.parquet}, \artifact{lda_tokens.parquet} và \artifact{bert_texts.parquet} được kiểm tra cùng thứ tự ID. Điều này quan trọng vì hàng $i$ của embedding matrix phải ứng với chính tài liệu thứ $i$, nếu không mọi score vẫn có thể hữu hạn nhưng trỏ sai metadata. SHA-256 và manifests kiểm tra tính toàn vẹn, không chứng minh nội dung đúng về mặt hóa học.
+
+Các hình bổ sung thể hiện rõ dữ liệu thiếu, phạm vi năm, độ dài văn bản, disposition và các nhãn miền. Nhãn heuristic không được sử dụng như relevance ground truth. Biểu đồ độ dài giải thích nhu cầu xử lý Abstract dài, nhưng không tự chứng minh chunking cải thiện tìm kiếm.
+\input{chapters/figures_data.tex}
+\section{Triển khai mô hình LDA}
+Dictionary được tạo từ toàn bộ token Stage 1, không lọc thêm bằng no-below/no-above trong thí nghiệm này. Mỗi văn bản được chuyển thành sparse count theo công thức~\eqref{eq:bow}. Năm cấu hình $K\in\{10,15,20,25,30\}$ được chạy ở seed 42 với 10 passes, tối đa 100 iterations mỗi bước inference, chunksize 1.024 và online updates. Hai cấu hình tốt theo $C_v$ được khảo sát thêm seed 123 và 2026.
+
+Điểm lựa chọn là:
+\begin{equation}\label{eq:selection}
+S_K=0,50\widetilde C_v+0,15\widetilde U_{Mass}+0,15D+0,20S_{stab}.
+\end{equation}
+$\widetilde C_v,\widetilde U_{Mass}$ được min--max trên năm cấu hình seed cơ sở; stability tính trên các cấu hình shortlisted. Hệ số là policy tác giả đặt trước, không phải trọng số học từ test. Ô stability/selection trống ở cấu hình không chạy bổ sung được giữ là chưa tính, không điền 0. Tie-break ưu tiên $K$ nhỏ hơn và model cuối dùng seed 42.
+
+Sau lựa chọn $K=20$, code xuất phân bố document--topic đầy đủ, topic trội, Top10 keywords, số tài liệu trội và soft mass. Soft mass $\sum_d\theta_{dk}$ khác số tài liệu có $\arg\max\theta_d=k$; hai thống kê không được gọi cùng là ``số tài liệu topic''. Kết quả được sử dụng để xem topic và làm vector SE1 lịch sử. Search v2 vẫn chạy được khi không tải LDA.
+
+\reportfigure{lda_comparison.png}{Khảo sát số chủ đề LDA từ artifact thực nghiệm. Các tiêu chí mô tả tính chất topic, không phải điểm Search Engine.}{.98}{fig:lda-grid}
+\source{outputs/figures/stage2/lda_01_model_comparison.png}
+Hai hình dưới trình bày phân bố tài liệu theo topic trội và soft topic theo nguồn. Chúng đo hai đại lượng khác nhau; số tài liệu argmax không thể cộng thay cho tổng khối lượng xác suất. Các heatmap theo năm và keywords được đưa vào phụ lục hình mở rộng.
+\input{chapters/figures_lda.tex}
+
+\section{Fine-tuning BGE và xây dựng BERTopic}
+\subsection{Dữ liệu huấn luyện, lựa chọn checkpoint và kiểm chứng}
+Trong 13.702 tài liệu có 13.650 cặp Title--Abstract không rỗng. GroupShuffleSplit hai giai đoạn với seed 42 hướng tới tỷ lệ 80/10/10; số hàng thực tế là 10.921 train, 1.361 validation và 1.368 test. Tỷ lệ không cần đúng tuyệt đối vì phải giữ nguyên nhóm. Bảng~\ref{tab:splits} tổng hợp theo nguồn; số group theo nguồn không được cộng rồi coi là chắc chắn số group duy nhất toàn split nếu có quan hệ xuyên nguồn.
+\input{tables/splits.tex}
+
+Fine-tuning cập nhật gradient thực qua block cuối với loss~\eqref{eq:sym-loss}; học một epoch trên CPU, batch 8, learning rate $2\times10^{-5}$, weight decay 0,01 và warmup fraction 0,1. Checkpoint chọn ở step 1.365 theo validation group MRR@10. Artifacts ghi hash trước/sau, thay đổi weights khác zero và frozen weights không đổi; các bằng chứng này xác nhận có training, không chứng minh training luôn hữu ích cho retrieval thực tế.
+
+Benchmark Title--Abstract mã hóa Title làm query, Abstract làm candidate trong cùng held-out split. Mọi tài liệu cùng nhóm được xem là relevant theo proxy, không phải qrels chuyên gia. Test có 1.368 query và 1.368 candidates, khác tìm kiếm trên 13.702 tài liệu. Các điểm trước/sau và CI được trình bày ở Chương~\ref{ch:experiments}.
+
+\reportfigure{training.png}{Loss huấn luyện và theo dõi validation của thí nghiệm fine-tuning đã lưu. Đường loss không được dùng thay thế relevance benchmark.}{.96}{fig:training}
+\source{outputs/figures/stage3/bert_01_training.png}
+
+\subsection{Embeddings baseline, chunked và topic models}
+Baseline tạo embedding 768 chiều với max sequence length 128 từ \artifact{bert_texts.text}. Nhánh chunked sử dụng cùng checkpoint fine-tuned, tạo tokenizer pair với Title context và từng phần Abstract, max 256, overlap 64. Embedding mỗi chunk là BGE CLS đã chuẩn hóa, pooling theo công thức~\eqref{eq:pool}. Không có training bổ sung ở nhánh chunked.
+
+Các kiểm tra offsets ghi nhận 3.947.927/3.947.927 Abstract WordPiece tokens được phủ, 29.139 chunks trên 13.702 documents; 52 tài liệu Title-only. Không có Title context bị cắt trong corpus thực tế mặc dù code có guard giới hạn. ``Bao phủ 100\%'' nói về token đầu vào, không chứng minh vector cuối bảo toàn 100\% thông tin. Độ dài 256 bao gồm special tokens/Title, nên không thể mô tả đơn giản là mọi Abstract được cắt thành đoạn 256 token thuần.
+\source{outputs/bertopic_chunked/chunking_success.json}
+
+BERTopic dùng UMAP 15 neighbors, 5 components, min-dist 0, cosine, seed 42; HDBSCAN min-cluster-size 30, min-samples 10, EOM và Euclidean ở không gian thấp. CountVectorizer dùng vocabulary LDA đóng băng, giữ case và token đã xử lý; adapter tránh làm sạch lần thứ hai. C-TF-IDF bật giảm từ thường gặp, Top10 keywords. Không ép \artifact{nr_topics} hoặc tự reassignment outliers. Baseline cho 92 topics, chunked 84; đây là đầu ra của mật độ, không phải tham số ấn định 92/84 trước chạy.
+
+\reportfigure{chunked_umap.png}{UMAP 2D minh họa BERTopic chunked. Khoảng cách trực quan và vùng màu không phải kiểm định relevance hoặc chứng minh các cụm tách biệt trong không gian gốc.}{.92}{fig:chunk-umap}
+\source{outputs/bertopic_chunked/figures/umap_2d.png}
+
+\section{Xây dựng hệ thống tìm kiếm}
+Ba search engines lịch sử dùng cùng metadata và mapping ID, nhưng khác biểu diễn và score. SE1 truy vấn vector LDA; SE2 lấy dense fine-tuned và topic centroid bonus 0,1; SE3 dùng RRF hai danh sách Top100. Qdrant lưu cả named vectors, payload và thực hiện cosine theo contract. Các công thức~\eqref{eq:se1}--\eqref{eq:rrf} được đối chiếu với mã nguồn cũ trong ZIP archive, không suy từ tên phương pháp.
+
+Sau nâng cấp, app sử dụng \artifact{src/search_v2.py} qua service worker. Có mười nhánh: BM25\_CHEMICAL; ba DENSE; ba HYBRID; ba RERANK ứng với pretrained, fine-tuned và chunked. Khi đánh giá 14 methods, bổ sung SE1, SE2, SE3 và BM25 lịch sử. Ba dense v2 giữ đúng thứ hạng baseline đã lưu ở 24/24 queries, hỗ trợ kiểm tra tính tương thích; không phải bằng chứng chúng có relevance bằng nhau.
+
+Query được chuẩn hóa, kiểm tra giới hạn, tạo mask nguồn/năm và kiểm tra required terms. Dense query có instruction BGE và từ chối vượt ngân sách 128 tokens thay vì âm thầm cắt. Lexical BM25 index đọc toàn Title/Abstract; dense dùng một vector mỗi tài liệu; cross-encoder chỉ đọc tối đa hai passage. Không được gọi mọi nhánh đều ``đọc toàn văn''.
+
+App mặc định \artifact{RERANK_PRETRAINED}, là quyết định thiết kế giảm phụ thuộc fine-tuned checkpoint của dự án. Nó vẫn sử dụng các pretrained weights BGE và MiniLM bên ngoài; không có nghĩa mô hình chưa từng được huấn luyện. Required terms chỉ kiểm tra sự có mặt token trong văn bản; ví dụ NaFSI và ether cùng xuất hiện chưa chắc được sử dụng cùng nhau. Kết quả trả Top5, metadata và passage đã dùng để rerank, không tạo câu trả lời khoa học tổng hợp.
+
+Các mô hình và lexicon được tải/cached để vận hành cục bộ. App không cần mở Qdrant cũ hoặc huấn luyện lại. Vì corpus chỉ khoảng 13 nghìn hàng, dense matrix search exact bằng NumPy là lựa chọn thực tế có thể kiểm tra. Không suy rộng hiệu năng này tới hàng triệu tài liệu hoặc nhiều người truy cập đồng thời.
