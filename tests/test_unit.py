@@ -23,6 +23,19 @@ def test_lda_real_lemmatization_and_protected_terms():
     assert "the" not in tokens
 
 
+@pytest.mark.parametrize("text,expected", [
+    ("all-solid-state electrolyte", "all-solid_state"),
+    ("quasi-solid-state sodium batteries", "quasi-solid_state"),
+    ("hard-carbon-based anode Na3V2(PO4)3", "hard_carbon-based"),
+])
+def test_protected_phrases_in_hyphenated_compounds(text, expected):
+    tokens = lda_tokens(text, ["solid state", "hard carbon"])
+    assert expected in tokens
+    assert not any("placeholder" in token for token in tokens)
+    if "Na3V2(PO4)3" in text:
+        assert "Na3V2(PO4)3" in tokens
+
+
 @pytest.mark.parametrize("title,abstract,label", [
     ("Hard carbon anodes for sodium-ion batteries", "", "CORE"),
     ("Lithium-ion and sodium-ion batteries", "Comparative storage", "CORE"),

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "seed": 42,
+  "stability_seed": 43,
+  "final_seed": 137,
+  "clusters": 10,
+  "n_init": 10,
+  "max_iter": 300,
+  "fit_split": "train",
+  "selection_split": "validation",
+  "final_split": "test",
+  "gates": {
+    "largest_topic_share_max": 0.30,
+    "top2_topic_share_max": 0.45,
+    "smallest_topic_share_min": 0.005,
+    "source_cramers_v_max": 0.50,
+    "stability_ari_min": 0.60,
+    "keyword_diversity_min": 0.75,
+    "keyword_support_min": 0.95,
+    "validation_npmi_min": 0.0
+  },
+  "candidates": [
+    ["pretrained", "raw"],
+    ["pretrained", "center"],
+    ["pretrained", "abtt3"],
+    ["pretrained", "source"],
+    ["pretrained", "whiten64"],
+    ["pretrained", "source_whiten64"],
+    ["finetuned", "raw"],
+    ["finetuned", "center"],
+    ["finetuned", "source"],
+    ["finetuned", "source_whiten64"],
+    ["bge", "raw"]
+  ]
+}

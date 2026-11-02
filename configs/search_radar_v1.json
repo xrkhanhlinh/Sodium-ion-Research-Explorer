@@ -1,0 +1,12 @@
+{
+  "version": "search_radar_20261030_v1",
+  "production_enabled": false,
+  "candidate_depths": [50, 100, 200],
+  "rrf_k": 60,
+  "fixed_weight_ablation": {"tfidf": 1.0, "bge": 1.0, "fulldoc": 2.0},
+  "rerank_depths": [20, 30, 50],
+  "weight_selection": "NOT_SELECTED_PENDING_INDEPENDENT_DEVELOPMENT_LABELS",
+  "cross_encoder_control_enabled_by_default": false,
+  "ai_extraction_enabled": false,
+  "gate": {"latency_p95_ratio_max": 1.5, "rss_ratio_max": 1.5, "require_positive_paired_ci": true}
+}

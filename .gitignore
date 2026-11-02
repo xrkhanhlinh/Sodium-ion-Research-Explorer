@@ -16,7 +16,10 @@
 !*.md
 !*.toml
 !*.yaml
+!requirements-final-system.txt
 !*.yml
+!configs/batterybert_optimization.json
+!configs/search_radar_v1.json
 !*.gitignore
 .env
 .env.*

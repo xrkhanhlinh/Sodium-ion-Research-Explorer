@@ -1,0 +1,38 @@
+expected_documents: 13702
+seed: 42
+threads: 4
+target_topics: 10
+evaluation:
+  topn: 10
+  cv_window_size: 110
+  processes: 1
+  representative_documents: 5
+batterybert:
+  model_id: batterydata/batterybert-cased
+  chunk_tokens: 256
+  overlap: 64
+  batch_size: 2
+  pooling: attention_mask_mean_then_l2; mean_normalized_chunks_then_l2
+  training_max_tokens: 128
+  epochs: 1
+  trainable_encoder_blocks: 1
+  learning_rate: 0.00002
+  temperature: 0.05
+  weight_decay: 0.01
+  gradient_accumulation: 2
+  checkpoint_every_steps: 100
+  validation_every_steps: 1000
+  title_jaccard_false_negative_threshold: 0.8
+  selection_metric: validation_group_mrr_at_10
+  expected_splits:
+    train: 10921
+    validation: 1361
+    test: 1368
+bertopic:
+  umap_neighbors: 15
+  umap_components: 5
+  umap_min_dist: 0.0
+  min_cluster_size: 30
+  min_samples: 10
+  cluster_selection_method: eom
+  reduce_frequent_words: true

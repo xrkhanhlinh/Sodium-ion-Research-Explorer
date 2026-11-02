@@ -1,5 +1,30 @@
 # Đặc tả hiện tại
 
+**Hiện hành24/10/2026:** BatteryBERT full-document là nhánh mới: train đủ các
+đoạn Title–Abstract, native chunk256/64, loss batch32 bằng gradient caching,
+khóa11 block và cập nhật block cuối. Chỉ train10.921 IDs; validation1.361 chọn
+LR/checkpoint; test1.368 đo sau lựa chọn; 52 title-only chỉ inference.
+
+Search full-document dùng checkpoint mới và vectors đúng hash/doc_id trong
+Qdrant riêng, hợp nhất TF-IDF/dense bằng RRF60. Query có windowing đầy đủ;
+không áp dụng giới hạn128-token của V2 lịch sử. Bộ lọc áp dụng trước ranking.
+Topic dùng train-fit source projection/KMeans10 và keywords từ raw fields có
+giữ ranh giới stopword/dấu câu/field; không dùng topic cộng điểm ranking.
+
+Model/index/catalog chỉ kích hoạt theo `outputs/batterybert_full_document_20261024_v1/deployment.json`.
+Các model cũ giữ làm đối chứng. Corpus chưa có toàn văn bài báo; không gọi
+phép thử Title→document có Title context là relevance Search độc lập. ARI
+là agreement KMeans, không phải accuracy. Không có nhãn người thì metrics
+relevance0–2 của pool6 phương pháp vẫn để trống.
+
+Implementation mới: `src/batterybert_full_document.py`,
+`src/scientific_keyword_stream.py`, `src/full_document_inference.py`,
+`src/full_document_retrieval.py`, `src/full_document_topics.py`,
+`src/full_document_evaluation.py`; serving chung qua `src/final_search.py`
+và `src/final_dashboard.py`. Phần dưới mô tả các nhánh lịch sử.
+
+**Cập nhật 23/10/2026:** Search mặc định hiện là TF-IDF + BatteryBERT pretrained/Qdrant/RRF, topic chính là BatteryBERT fine-tuned/projection/KMeans10. [Pipeline và bằng chứng hiện hành](BATTERYBERT_OPTIMIZATION_20261023.md). Mô tả BGE/MiniLM phía dưới là cấu hình V2 lịch sử, vẫn có thể chọn để đối chứng.
+
 - Corpus: data/processed/main_corpus.parquet, đúng 13.702 doc_id duy nhất. Không trộn UNCERTAIN vào thí nghiệm hiện tại.
 - Giữ Title/Abstract, provenance/source/year/identifier/split_group_id. Không tạo nội dung thiếu hoặc sửa corpus để tăng điểm.
 - BGE pretrained + MiniLM reranker là đường mặc định. Fine-tuned/chunked là ablation tùy chọn.

@@ -102,6 +102,11 @@ def lda_tokens(text, phrases=(), extra_stopwords=()):
             out.append(protected[word])
         elif word in phrase_map:
             out.append(phrase_map[word])
+        elif any(marker in word for marker in phrase_map):
+            # TOKEN retains hyphenated compounds (e.g. all-phraseplaceholderi).
+            # Restore their protected phrase before lemmatization as well.
+            restored = re.sub(r"phraseplaceholder[a-z]", lambda m: phrase_map[m.group()], word)
+            out.append(restored)
         elif len(word) > 1 and word not in stops and not word.startswith("chemplaceholder"):
             out.append(lemma(word))
     return out
